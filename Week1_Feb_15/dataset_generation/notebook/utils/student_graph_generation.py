@@ -10,6 +10,7 @@ class TeamDataSource(object):
     def __init__(self, id, data_path):
         self.id = id
         self.data_path = data_path
+        self.constraints = []
 
 class StudentGraphGenerator(object):
 
@@ -41,6 +42,9 @@ class StudentGraphGenerator(object):
         
         data_source = TeamDataSource(id, teams_data_source)
         self.data_sources.add(data_source)
+
+    def consider_constraint(self, member_list):
+        self.constriants = member_list
     
     def print_data_sources(self):
         for data_source in self.data_sources:
@@ -72,6 +76,24 @@ class StudentGraphGenerator(object):
             # extract all relations existing within the team
             current_colaborations = _generate_binary_collaborations(team)
             binary_collaborations_list.extend(current_colaborations.copy())
+
+        # consider constraints:
+        if len(self.constriants) > 0:
+            
+            # do the filtering on individuals
+            new_individuals = set()
+            new_collaborations_binary = []
+            for ind in individuals:
+                if ind in self.constriants:
+                    new_individuals.add(ind)
+            
+            # do the filering on collaborations
+            for col in binary_collaborations_list:
+                if col[0] in self.constriants and col[1] in self.constriants:
+                    new_collaborations_binary.append(col)
+            individuals = new_individuals
+            binary_collaborations_list = new_collaborations_binary
+
         return individuals, binary_collaborations_list
 
     def _generate_graph_binary(self):
@@ -146,7 +168,7 @@ class StudentGraphGenerator(object):
             # generate the graph with weighted mode
             self._generate_graph_weighted()
 
-    def draw_graph_binary(self):
+    def draw_graph_binary(self, save_option=False, save_path=None):
         plt.figure(figsize=(12, 7))
 
         nx.draw(
@@ -164,9 +186,15 @@ class StudentGraphGenerator(object):
 
         # Show the plot
         plt.title("Graph Visualization")
+
+        # THE SAVE OPTION        
+        if save_option and save_path != None:
+            plt.savefig(save_path)
+
+
         plt.show()
 
-    def draw_graph_weighted(self):
+    def draw_graph_weighted(self, save_option=False, save_path=None):
         plt.figure(figsize=(12, 7))
 
         nx.draw(
@@ -180,11 +208,17 @@ class StudentGraphGenerator(object):
             font_weight='bold',
             edge_color='red', width=1
             )
-
+        
         # Show the plot
         plt.title("Graph Visualization")
-        plt.show()
+        
+        # THE SAVE OPTION        
+        if save_option and save_path != None:
+            plt.savefig(save_path)
 
+
+        plt.show()
+    
     
     def export_binary_graph(self, export_path):
         name:str = export_path
