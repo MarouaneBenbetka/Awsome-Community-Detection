@@ -1,8 +1,7 @@
-,id,email,first_name,last_name
 0,20/0003,kh_abdelmoumen@esi.dz,HATEM MOHAMED,ABDELMOUMEN
 1,20/0188,kn_ameur@esi.dz,NASSIM,AMEUR
-2,20/0280,kr_baaguigui@esi.dz, RAMZI , BAAGUIGUI 
-3,20/0278,km_bekkar@esi.dz, MERWAN , BEKKAR 
+2,20/0280,kr_baaguigui@esi.dz,RAMZI ,BAAGUIGUI
+3,20/0278,km_bekkar@esi.dz,MERWAN,BEKKAR
 4,20/0050,km_benbetka@esi.dz,MAROUANE,BENBETKA
 5,20/0142,kh_benouaklil@esi.dz,HODHAIFA,BENOUAKLIL
 6,20/0119,kw_bouhedda@esi.dz,WALID,BOUHEDDA
@@ -21,7 +20,7 @@
 19,20/0054,km_karim@esi.dz,MERYEM  BATOUL,KARIM
 20,20/0025,ka_kebir@esi.dz,AHMED RAYANE,KEBIR
 21,20/0013,ky_refisse@esi.dz,YOUCEF,REFISSE
-22,20/0277,km_slama@esi.dz, MENAT ALLAH FADOUA , SLAMA 
+22,20/0277,km_slama@esi.dz,MENAT ALLAH FADOUA ,SLAMA
 23,20/0300,km_tirichine@esi.dz,MOHAMMED,TIRICHINE
 24,20/0115,ki_triki@esi.dz,IMED,TRIKI
 25,20/0252,kr_ziane@esi.dz,RAMDHAN,ZIANE
