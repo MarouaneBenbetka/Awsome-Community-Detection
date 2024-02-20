@@ -255,13 +255,16 @@ class Action(object):
         self.destination_community = destination_community
         self.value = value
 
-
     def print_action(self):
-        print('node: {}, source: {}, destination: {}'.format(
-            self.node,
-            self.source_community,
-            self.destination_community)
+        print(
+            'node: {}, source: {}, destination: {}, value: {}'.format(
+                self.node,
+                self.source_community,
+                self.destination_community,
+                self.value
+            )
         )
+
 
 class LouvainMachine(object):
     def __init__(self, graph: nx.Graph):
@@ -434,6 +437,7 @@ class LouvainMachine(object):
 
         # printing the content of the dict
         improvement = False
+        phase_actions = []
         for node in ordered_nodes:
 
             # get the set of neighboring communities
@@ -463,7 +467,7 @@ class LouvainMachine(object):
 
                 # ki is the sum of weights of edges incident to the current node
                 ki = 0
-                
+
                 for a, b in self.graph.edges:
                     # if a and b are in community: add c to sum_weights
                     a_community = self.graph._node[a]['community']
@@ -471,11 +475,11 @@ class LouvainMachine(object):
                     c = self.graph.get_edge_data(a, b)['weight']
                     # print(c)
                     if a_community == community and b_community == community:
-                        sum_weights_internal += c
-                    
+                        sum_weights_internal += 2 * c
+
                     if a == node and b_community == community or b == node and a_community == community:
                         ki_in += c
-                    
+
                     if a == node or b == node:
                         ki += c
                 # compute the value of ki_in
@@ -505,15 +509,18 @@ class LouvainMachine(object):
             if len(actions) > 0:
                 action_max = max(actions, key=lambda action: action.value)
 
+                phase_actions.append((actions.copy(), action_max))
                 if action_max.value > 0:
-                    self.action_history.append((actions.copy(), action_max))
                     action_max.print_action()
                     self.apply_action(action_max)
                     print('choosing maximum action >>>>', end='')
                     action_max.print_action()
-                    return True
+                    improvement = True
+                    continue
+
             print('no action is chosen')
-            return False
+        self.action_history.append(phase_actions)
+        return improvement
 
     def louvain_reduce(self):
         # generate a new graph, based on the current communities
@@ -604,7 +611,7 @@ class LouvainMachine(object):
                 'people_nodes': peoples_nodes
             }
         )
-        ids = [(i+1) for i in range(len(g.edges))]
+        ids = [(i + 1) for i in range(len(g.edges))]
         nodes_a = [a for a, b in g.edges]
         nodes_b = [b for a, b in g.edges]
 
@@ -642,10 +649,46 @@ class LouvainMachine(object):
 
         display_fn(actions_df)
 
+    @staticmethod
+    def display_graph_phase_actions(phase_actions, display_fn, phase=''):
+        pass
+        # phase actions is a list of tuples
+        # each tuple has the following format (list of node actions, max action)
+        for node_actions, max_action in phase_actions:
+            # construct the data frame for the current node
+            nodes = [a.node for a in node_actions]
+            sources = [a.source_community for a in node_actions]
+            destinations = [a.destination_community for a in node_actions]
+            values = [a.value for a in node_actions]
+
+            # build the data frame to display
+            node_actions_df = pd.DataFrame.from_dict({
+                'node': nodes,
+                'source': sources,
+                'destination': destinations,
+                'value': values
+            })
+            print('---------------Possible actions for node {} in phase {}---------------'.format(
+                nodes[0], phase
+            ))
+            display_fn(node_actions_df)
+            # the above four lists are related to the same node
+            # among these, we will choose one that maximizes modularity gain
+            print('the action among the previous actions that maximizes modularity gain is:')
+            max_action.print_action()
+            # display the possible actions for the node alongside the max action
+        print('displayed possible actions for all the nodes in phase: {}'.format(phase))
+        print('----------------------------------------------------------------')
+
     def display_graph_history_tables(self, display_fn):
         # for i, g in zip(range(1, len(self.graph_history)), self.graph_history[1:]):
         for i, g, a in zip(range(len(self.graph_history)), self.graph_history, self.action_history):
             # LouvainMachine.display_graph_table(g, display_fn)
-            actions, max_action = a
-            self.display_graph_table(g, lambda x: display_fn(x), title='Graph in the phase: {}'.format(i+1))
-            self.display_graph_actions(actions, max_action, lambda x: display_fn(x))
+            # actions, max_action = a
+            # a represents phase actions
+            # print('got value for a: ', a)
+            print('')
+            self.display_graph_table(g, lambda x: display_fn(x), title='Graph in the phase: {}'.format(i + 1))
+            # self.display_graph_actions(actions, max_action, lambda x: display_fn(x))
+            self.display_graph_phase_actions(a, phase=i + 1, display_fn=display_fn)
+            print('')
