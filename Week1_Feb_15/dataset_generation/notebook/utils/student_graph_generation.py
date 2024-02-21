@@ -1,6 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import pickle
+import d3fdgraph
 import pandas as pd
 from typing import List
 
@@ -160,6 +161,28 @@ class StudentGraphGenerator(object):
             # generate the graph with weighted mode
             self._generate_graph_weighted()
 
+    def plot_force_graph_binary(self):
+        g = self.generated_binary_graph
+        sources = []
+        targets = []
+        weights = []
+        for a, b in g.edges:
+            c = g.get_edge_data(a, b, 'weight')
+            sources.append(a)
+            targets.append(b)
+            weights.append(c)
+
+        # construct the data frame to plot the graph
+        dataframe = pd.DataFrame.from_dict({
+            "source": sources,
+            "target": targets,
+            "weight": weights
+        })
+        d3fdgraph.plot_force_directed_graph(dataframe)
+
+    def plot_force_graph_weighted(self):
+        pass
+
     def draw_graph_binary(self, save_option=False, save_path=None):
         plt.figure(figsize=(12, 7))
 
@@ -208,6 +231,7 @@ class StudentGraphGenerator(object):
             plt.savefig(save_path)
 
         plt.show()
+
 
     def export_binary_graph(self, export_path):
         name: str = export_path

@@ -1,5 +1,7 @@
 import networkx as nx
 import pandas as pd
+
+
 class Action(object):
     def __init__(self, node, source_community, destination_community, value):
         self.node = node
@@ -37,6 +39,7 @@ class Action(object):
     - relaunch the algorithm
 """
 
+
 class LouvainMachine(object):
     def __init__(self, graph: nx.Graph):
         self.graph = nx.Graph()
@@ -47,7 +50,7 @@ class LouvainMachine(object):
         self.graph.add_nodes_from(graph.nodes)
 
         # for each node in the graph, assign a community name
-        # and a prople community
+        # and a people community
         # note that there are some nodes that will not be present
         # as keys representing their people
         # initially, every node represents itself
@@ -56,28 +59,16 @@ class LouvainMachine(object):
             self.graph._node[node]['community'] = node
             self.graph._node[node]['people_nodes'] = [node]
 
-        # print the nodes to make sure that they are created
-        print('>> Called constructor LouvainMachine: created graph with nodes:')
-        print(self.graph.nodes)
-        print(self.graph._node)
-        print('---------------------------------------------------------------')
-
         # extract the edges from the previous graph
         # and add them to the newly created graph
         for edge in graph.edges:
             a, b = edge
             self.graph.add_edges_from([(a, b, {'weight': 1})])
 
-            # self.graph.add_edge(a, b, 1)
-        # print the edges to make sure that they are created
-        print('created graph with edges:')
-        print(self.graph.edges)
-        print('---------------------------------------------------------------')
         # todo: consider taking a look on this
+        # compute the constant m for the graph
         self.m = len(self.graph.edges)
         self.graph_history.append(self.graph.copy())
-
-        self.improvement = True
 
     def order_nodes(self):
         # RETURN LIST OF REFERENCES TO THE NODES TO BE CONSIDERED IN THIS ORDER
@@ -121,16 +112,8 @@ class LouvainMachine(object):
         # given the action parameter
 
     def modularity_score(self):
-        # consider the current graph with the current labels, and compute the modularity score
-        # compute the global modularity score of the current graph
-        node_count = len(self.graph.nodes)
-
-        # for each node, compute the number of neighboring nodes
-        nodes_neighbor_count = {}
-        Q = 0
-        for node in self.graph.nodes:
-            for neighbor in nx.neighbors(self.graph, node):
-                Q += 1 - (() / ())
+        # compute the modularity of the graph
+        return 0
 
     @staticmethod
     def graph_status(g):
@@ -151,25 +134,23 @@ class LouvainMachine(object):
 
     def forward_louvain(self):
 
+        # assign community maximizing delta gain for each node
+        # improvement: True if the node-community assignment produced positive delta gain
         improvement = self.louvain_assign()
-        print('called louvain_assign, got the following value for improvement: ', improvement)
 
         if not improvement:
             return False
 
-        # self.graph_history.append(self.graph.copy())
         # if there is improvement, proceed with the reduction phase
         g = self.louvain_reduce()
 
+        # if the graph is not reduced
         if len(g.nodes) == len(self.graph.nodes):
             return False
 
         self.graph = g
-        # print("showing the returned graph")
-        # self.graph_status(g)
-        # print('status after updating self.graph')
-        # self.print_status()
         self.graph_history.append(self.graph.copy())
+        # tell there is improvement
         return True
 
     def solve_communities(self):
@@ -182,23 +163,74 @@ class LouvainMachine(object):
         while improvement:
             improvement = self.forward_louvain()
 
-        # invoke the two phases of louvain algorithm stated below
-        # consider adding some parameters to control tracking the history and all things related to that
+    def compute_delta_q(self, node, community):
+        # ki_in:
+
+        # m: the edge count in the entire graph
+        # sum_weights: sum of the weights in the same community
+        sum_weights_internal = 0
+        ki_in = 0
+
+        # ki is the sum of weights of edges incident to the current node
+        ki = 0
+
+        for a, b in self.graph.edges:
+            # if a and b are in community: add c to sum_weights
+            a_community = self.graph._node[a]['community']
+            b_community = self.graph._node[b]['community']
+            c = self.graph.get_edge_data(a, b)['weight']
+            # print(c)
+            if a_community == community and b_community == community:
+                sum_weights_internal += 2 * c
+
+            if a == node and b_community == community or b == node and a_community == community:
+                ki_in += c
+
+            if a == node or b == node:
+                ki += c
+        # compute the value of ki_in
+        # TODO: retake a look here
+
+        # delta q: (ki_in / m) - (ki * degree of the class) / (2*m**2)
+        delta_q = (ki_in / self.m) - (sum_weights_internal * ki) / (2 * self.m ** 2)
+        return delta_q
+
+    def neighbor_communities(self, node):
+        neighbor_communities = set()
+        node_neighbors = list(nx.neighbors(self.graph, node))
+
+        # print('=============')
+        for neighbor in node_neighbors:
+            neighbor_communities.add(self.graph._node[neighbor]['community'])
+
+        return list(neighbor_communities)
+
+    def louvain_assign_possible_actions(self, node):
+
+        neighbor_communities = self.neighbor_communities(node)
+
+        actions = []
+        print('neighbor communities', neighbor_communities)
+        for community in neighbor_communities:  # the candidate communities
+            # compute delta gain
+            delta_q = self.compute_delta_q(node, community)
+
+            action = Action(
+                node,
+                self.graph._node[node]['community'],
+                community,
+                delta_q
+            )
+            actions.append(action)
+
+        return actions
 
     def apply_action(self, action: Action):
-        source = action.source_community
+        # source = action.source_community
         destination = action.destination_community
-        value = action.value
+        # value = action.value
         node = action.node
-        # TODO: the problem is coming from here, consider removing all the elements, not only the
-        # TODO: node having the same name
-        # self.graph._node[source]['people_nodes'].remove(node)
-        # self.graph._node[destination]['people_nodes'].append(node)
-        # self.graph._node[destination]['people_nodes'].extend(self.graph._node[node]['people_nodes'])
         self.graph._node[node]['community'] = destination
-        # TODO: consider doing more thing here
-        # TODO: consider writing all the data structures involved
-        # and update each one of them individually so that waste no info
 
     def louvain_assign(self):
         # this is the first phase of the louvain algorithm
@@ -210,72 +242,7 @@ class LouvainMachine(object):
         improvement = False
         phase_actions = []
         for node in ordered_nodes:
-
-            # get the set of neighboring communities
-            neighbor_communities = set()
-            node_neighbors = list(nx.neighbors(self.graph, node))
-
-            print('=============')
-            for neighbor in node_neighbors:
-                neighbor_communities.add(self.graph._node[neighbor]['community'])
-                # neighbor_communities.add(self.graph.)
-            # if self.graph._node[node]['community'] in neighbor_communities:
-            #     neighbor_communities.remove(self.graph._node[node]['community'])
-
-            # here we  have the set of possible new communities READY
-            actions = []
-            neighbor_communities = list(neighbor_communities)
-            print('neighbor communities', neighbor_communities)
-            for community in neighbor_communities:  # the candidate communities
-                # compute value
-
-                # ki_in: the number of node neighbors in the same class
-
-                # m: the edge count in the entire graph
-                # sum_weights: sum of the weights in the same community
-                sum_weights_internal = 0
-                ki_in = 0
-
-                # ki is the sum of weights of edges incident to the current node
-                ki = 0
-
-                for a, b in self.graph.edges:
-                    # if a and b are in community: add c to sum_weights
-                    a_community = self.graph._node[a]['community']
-                    b_community = self.graph._node[b]['community']
-                    c = self.graph.get_edge_data(a, b)['weight']
-                    # print(c)
-                    if a_community == community and b_community == community:
-                        sum_weights_internal += 2 * c
-
-                    if a == node and b_community == community or b == node and a_community == community:
-                        ki_in += c
-
-                    if a == node or b == node:
-                        ki += c
-                # compute the value of ki_in
-                # TODO: retake a look here
-
-                # delta q: (ki_in / m) - (ki * degree of the class) / (2*m**2)
-                delta_q = (ki_in / self.m) - (sum_weights_internal * ki) / (2 * self.m ** 2)
-                action = Action(
-                    node,
-                    self.graph._node[node]['community'],
-                    community,
-                    delta_q
-                )
-                actions.append(action)
-                # the end of the evaluation shoudl be here
-
-            # choose the action that maximizes the delta q
-            # print('possible actions:')
-            # print(actions)
-
-            # print('the set of possible actions in the current phase:')
-            # for a in actions:
-            #     a.print_action()
-            # print('-----------------------------------------------------')
-
+            actions = self.louvain_assign_possible_actions(node)
             action_max = None
             if len(actions) > 0:
                 action_max = max(actions, key=lambda action: action.value)
@@ -302,41 +269,27 @@ class LouvainMachine(object):
         community_nodes_dict = dict()
         for node in self.graph.nodes:
             current_community = self.graph._node[node]['community']
-            # print(f'the community of {node} is {current_community}')
-            # community_nodes_dict[current_community].append('4445')
+
             if current_community in community_nodes_dict:
-                print('before:')
-                print(community_nodes_dict[current_community])
-                # community_nodes_dict[current_community].append(node)
                 community_nodes_dict[current_community].extend(
                     self.graph._node[node]['people_nodes']
                 )
-                print('after:')
-                print(community_nodes_dict[current_community])
-
             else:
                 community_nodes_dict[current_community] = []
-                community_nodes_dict[current_community].extend(
-                    self.graph._node[node]['people_nodes']
+                (
+                    community_nodes_dict[current_community].extend
+                        (
+                        self.graph._node[node]['people_nodes']
+                    )
                 )
-        # print('the dict')
-        # print(community_nodes_dict)
-        # remove the keys that have no value from the dict
-        # to_remove = []
-        # for key, value in community_nodes_dict.items():
-        #     if value == {}:
-        #         to_remove.append(key)
-        # for key in to_remove:
-        #     del community_nodes_dict[key]
-        # print('keys', list(community_nodes_dict.keys()))
         g.add_nodes_from(list(community_nodes_dict.keys()))
-        # print('nodesss')
-        # print(g.nodes)
+
         for n in g.nodes:
             g._node[n] = dict()
             g._node[n]['community'] = n
             g._node[n]['people_nodes'] = community_nodes_dict[n]
         print(g._node)
+
         # generate edges of the graph
         new_edges_dict = {}
         for n1, n2 in self.graph.edges:
@@ -361,10 +314,8 @@ class LouvainMachine(object):
             # we should consider adding the des between the communities not the edges themselves
             a, b = key
 
-            # print('(a, b) = ({}, {})'.format(a, b))
             g.add_edges_from([(a, b, {'weight': value})])
 
-        # self.graph_status(g=g)
         return g.copy()
 
     @staticmethod
@@ -399,11 +350,11 @@ class LouvainMachine(object):
         print('--------------------------{}--------------------------'.format(title))
         display_fn(df_nodes)
         display_fn(df_edges)
-        print('______________________________________________________________')
+        print('_______________________________________________________________________________________________________')
         # display a table of edges, each edge will have its weight
 
     @staticmethod
-    def display_graph_actions(actions: List['Action'], max_action: Action, display_fn):
+    def display_graph_actions(actions: 'List[Action]', max_action: Action, display_fn):
         # construct a data frame for actions:
         action_sources = [a.source_community for a in actions]
         action_destinations = [a.destination_community for a in actions]
@@ -422,7 +373,6 @@ class LouvainMachine(object):
 
     @staticmethod
     def display_graph_phase_actions(phase_actions, display_fn, phase=''):
-        pass
         # phase actions is a list of tuples
         # each tuple has the following format (list of node actions, max action)
         for node_actions, max_action in phase_actions:
@@ -452,12 +402,8 @@ class LouvainMachine(object):
         print('----------------------------------------------------------------')
 
     def display_graph_history_tables(self, display_fn):
-        # for i, g in zip(range(1, len(self.graph_history)), self.graph_history[1:]):
+
         for i, g, a in zip(range(len(self.graph_history)), self.graph_history, self.action_history):
-            # LouvainMachine.display_graph_table(g, display_fn)
-            # actions, max_action = a
-            # a represents phase actions
-            # print('got value for a: ', a)
             print('')
             self.display_graph_table(g, lambda x: display_fn(x), title='Graph in the phase: {}'.format(i + 1))
             # self.display_graph_actions(actions, max_action, lambda x: display_fn(x))
