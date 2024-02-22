@@ -19,6 +19,17 @@ DARK_GREY = (0.3, 0.3, 0.3, 1.0)
 LIGHT_GREY = (0.6, 0.6, 0.6, 1.0)
 
 
+def communities_to_frame(n, communities, modularity):
+
+    nodes = list(range(n))
+
+    for i, community in enumerate(communities):
+        for node in community:
+            nodes[node] = i+1
+
+    return {'C': nodes, 'Q': modularity}
+
+
 ################
 # CLUSTER LAYOUT
 ################
@@ -368,7 +379,6 @@ class Animation(object):
         return self.artists
 
     def show(self, duration=15, filename=None, dpi=None):
-        # TODO remove +1
 
         fps = int(len(self.interpolated_frames) / duration + 1)
         anim = FuncAnimation(
@@ -381,14 +391,11 @@ class Animation(object):
             blit=True
         )
 
-        if not filename:
-            plt.show()
-        else:
-            anim.save(
-                filename,
-                fps=fps,
-                dpi=dpi
-            )
+        anim.save(
+            filename,
+            fps=fps,
+            dpi=dpi
+        )
 
         return anim
 
