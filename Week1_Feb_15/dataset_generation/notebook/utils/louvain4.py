@@ -115,13 +115,6 @@ class LouvainMachine(object):
         # compute the modularity of the graph
         return 0
 
-    def compute_m(self):
-        result = 0
-        for a, b in self.graph.edges:
-            c = self.graph.get_edge_data(a, b)['weight']
-            result += c
-        return result
-
     @staticmethod
     def graph_status(g):
         print("Solver State:")
@@ -147,7 +140,7 @@ class LouvainMachine(object):
 
         if not improvement:
             return False
-        self.m = self.compute_m()
+
         # if there is improvement, proceed with the reduction phase
         g = self.louvain_reduce()
 
@@ -380,6 +373,7 @@ class LouvainMachine(object):
 
     @staticmethod
     def display_graph_phase_actions(phase_actions, display_fn, phase=''):
+        pass
         # phase actions is a list of tuples
         # each tuple has the following format (list of node actions, max action)
         for node_actions, max_action in phase_actions:
@@ -409,20 +403,10 @@ class LouvainMachine(object):
         print('----------------------------------------------------------------')
 
     def display_graph_history_tables(self, display_fn):
-
+        # for i, g in zip(range(1, len(self.graph_history)), self.graph_history[1:]):
         for i, g, a in zip(range(len(self.graph_history)), self.graph_history, self.action_history):
             print('')
             self.display_graph_table(g, lambda x: display_fn(x), title='Graph in the phase: {}'.format(i + 1))
             # self.display_graph_actions(actions, max_action, lambda x: display_fn(x))
             self.display_graph_phase_actions(a, phase=i + 1, display_fn=display_fn)
             print('')
-
-    def compare_to_ground_truth(self, truth_path):
-        pass
-        # the ground truth is a txt file whose each
-        # line represents the label of the node
-        obtained_results = {label: self.graph._node['people_community'] for label in self.graph.nodes}
-
-        # TODO: consider coming back here, just compare the initial list with
-        # TODO: the resulting one
-
