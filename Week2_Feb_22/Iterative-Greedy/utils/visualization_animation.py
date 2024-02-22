@@ -245,7 +245,7 @@ class Animation(object):
         plt.rcParams["axes.facecolor"] = "black" if dark else "white"
 
         self.fig, (self.ax0, self.ax1) = plt.subplots(
-            1, 2, figsize=(12, 8))
+            1, 2, figsize=(12, 8), constrained_layout=True)
         self.artists = None
 
     def _calculate_axes_limits(self, node_size, node_border_size):
@@ -303,7 +303,6 @@ class Animation(object):
         self.ax1.tick_params(
             axis="y", colors=GREY if self.is_dark else LIGHT_GREY)
         plt.setp(self.ax1.get_xticklabels(), visible=False)
-        plt.tight_layout(pad=3.0)
 
         num_nodes = self.G.number_of_nodes()
         node_size = 10200 / num_nodes
