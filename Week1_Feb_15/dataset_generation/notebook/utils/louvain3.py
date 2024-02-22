@@ -1,7 +1,6 @@
 import networkx as nx
 import pandas as pd
 
-
 class Action(object):
     def __init__(self, node, source_community, destination_community, value):
         self.node = node
