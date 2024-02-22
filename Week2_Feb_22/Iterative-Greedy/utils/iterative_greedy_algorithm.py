@@ -136,14 +136,15 @@ def IG(adj_matrix, nb_iterations=100, beta=.4):
 
     frames = []
     modularity_trace = []
+    communities_trace = []
 
     # frames.append({'C':[i+1 for i in range(adj_matrix.shape[0]) ] , 'Q':0 })
 
-    print(beta)
     communities, mod = GCP(adj_matrix)
 
     modularity_trace.append(mod)
     frames.append(communities_to_frame(adj_matrix.shape[0], communities, mod))
+    communities_trace.append(communities)
 
     for i in tqdm(range(nb_iterations), desc="IG", total=nb_iterations):
 
@@ -156,7 +157,8 @@ def IG(adj_matrix, nb_iterations=100, beta=.4):
         if modularity(adj_matrix, new_communities) > modularity(adj_matrix, communities):
             communities = new_communities
             modularity_trace.append(mod)
+            communities_trace.append(communities)
             frames.append(communities_to_frame(
                 adj_matrix.shape[0], communities, mod))
 
-    return communities, modularity_trace, frames
+    return communities, modularity_trace, communities_trace, frames

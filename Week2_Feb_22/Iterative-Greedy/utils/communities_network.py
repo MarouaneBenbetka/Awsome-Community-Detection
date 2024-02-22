@@ -64,22 +64,10 @@ def communities_to_labels(G, communities):
     return sorted(res)
 
 
-def read_community_labels_file(file_path):
-    with open(file_path, 'r') as f:
-        lines = f.readlines()
-        res = []
-        for line in lines:
-            node, label = line.split()
-            res.append((int(node)-1, int(label)))
-        return res
-
-
 def calc_nmi(true_labels, pred_labels):
     true_labels = [label for node, label in true_labels]
     pred_labels = [label for node, label in pred_labels]
 
-    print(true_labels)
-    print(pred_labels)
     return metrics.normalized_mutual_info_score(true_labels, pred_labels, average_method='min')
 
 
@@ -97,4 +85,14 @@ def read_community_labels_file_reel(file_path):
         res = []
         for node, label in enumerate(lines):
             res.append((int(node), int(label)+1))
+        return res
+
+
+def read_community_labels_file_synth(file_path):
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+        res = []
+        for line in lines:
+            node, label = line.split()
+            res.append((int(node)-1, int(label)))
         return res
