@@ -270,6 +270,10 @@ class Animation(object):
         }
         ax0_title = self.ax0.text(
             s="Input Graph", transform=self.ax0.transAxes, **text_args)
+        
+        self.ax0.clear()
+        self.ax1.clear()
+        
         ax1_title = self.ax1.text(
             s="Modularity (Q)", transform=self.ax1.transAxes, **text_args)
 
@@ -346,6 +350,9 @@ class Animation(object):
         pos = self.interpolated_frames[i]["pos"]
         index = self.interpolated_frames[i]["index"]
 
+        
+        
+        
         self.artists.ax0_title.set_text(f"Iteration #{index}")
         self.artists.ax1_title.set_text(f"Modularity (Q) = {Q}")
 
