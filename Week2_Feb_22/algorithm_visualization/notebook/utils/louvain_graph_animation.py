@@ -1,5 +1,5 @@
 from manim import *
-
+import networkx as nx
 
 """
 We consider giving some explanation about what the functioning of thjs part will be like
@@ -23,6 +23,42 @@ The Louvain Algorithm generally goes like the following:
     We should learn more about the manim Graph Library
 """
 
+"""
+class MyParameterizedScene(Scene):
+    def __init__(self, param1, param2, **kwargs):
+        self.param1 = param1
+        self.param2 = param2
+        super().__init__(**kwargs)
+
+    def construct(self):
+        # Example animation using parameters
+        square = Square()
+        square.move_to(LEFT * self.param1)
+        circle = Circle()
+        circle.move_to(RIGHT * self.param2)
+        self.play(Create(square), Create(circle))
+        self.wait(2)
+"""
+# actually, it turned out that we will use a single scene to manage the entire staff
+# let's just go with this approach, if we discover a new way to do that, then there will
+# getting the old verson of code to work with the newer one
+
+
+class CreateGraphScene(Scene):
+
+    def __init__(self, graph: nx.Graph, **kwargs):
+        vertices = graph.nodes
+        edges = graph.edges
+
+        manim_graph = Graph(vertices, edges, vertex_type=Dot, vertex_config={2: {"fill_color": BLACK}})
+        self.manim_graph = manim_graph
+        super().__init__(**kwargs)
+
+    def construct(self):
+        # create the graph and show it on the screen
+        self.play(Create(self.manim_graph))
+        self.wait()
+
 
 class OrderGraphNodesScene(Scene):
     """
@@ -32,12 +68,15 @@ class OrderGraphNodesScene(Scene):
     TODO: consider elaborating more on this
     """
 
-    def __init__(self, graph):
+    def __init__(self, graph: nx.Graph):
         # TODO: consider taking a look on this
         # determine the order of the graph nodes
         Scene.__init__(self)
-        pass
 
+        # create the graph of manim
+
+    def construct(self):
+        pass
 
     def construct(self):
         # for each node associate a small lable with text representing the order
@@ -65,12 +104,14 @@ class EvaluateNodePotentialCommunities(Scene):
         # For each community, evaluate the score,
         # This logic seems to be complex, consider dividing the problem if necessary
         pass
+    Scene
 
 
 class AssignToClassMaxModularityScene(Scene):
     """
     This is related to the step C of the first phase
     """
+
     def __init__(self, node, community):
         # we can represent communities with colors or numbers
         pass
@@ -78,20 +119,32 @@ class AssignToClassMaxModularityScene(Scene):
     def construct(self):
         pass
 
-class HighlightCommunityNodesScene(Scene):
 
-    def __init__(self):
-        pass
+class HighlightCommunityNodesScene(Scene):
+    """"
+    def __init__(self, param1, param2, **kwargs):
+        self.param1 = param1
+        self.param2 = param2
+        super().__init__(**kwargs)
+        """
+
+    def __init__(self, nodes, graph: Graph, **kwargs):
+        self.nodes_to_highlight = nodes
+        self.graph = graph
+        super().__init__(**kwargs)
 
     def construct(self):
-        #
-        pass
+        # change color of the first node
+        first_key = list(self.graph.vertices.keys())[0]
+        self.graph.vertices[first_key].add_updater(lambda o: o.set_color(DARK_BROWN))
+        self.wait()
 
 
 class MergeSameCommunityNodesScene(Scene):
     """
     This relates to the phase B of the second phase
     """
+
     def __init__(self, community, nodes):
         pass
 
@@ -110,6 +163,7 @@ class HighlightEdgesConcerningCommunities(Scene):
         # highlight in (bold) the edges related to some communities
         pass
 
+
 class MergeEdgesToOneEdgeScene(Scene):
 
     def __init__(self):
@@ -118,4 +172,3 @@ class MergeEdgesToOneEdgeScene(Scene):
     def construct(self):
         # merge the edges into one edge with the weight being the sum of the weights
         pass
-

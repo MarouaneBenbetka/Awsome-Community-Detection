@@ -1,7 +1,6 @@
 import networkx as nx
 import pandas as pd
 
-
 class Action(object):
     def __init__(self, node, source_community, destination_community, value):
         self.node = node
@@ -416,13 +415,3 @@ class LouvainMachine(object):
             # self.display_graph_actions(actions, max_action, lambda x: display_fn(x))
             self.display_graph_phase_actions(a, phase=i + 1, display_fn=display_fn)
             print('')
-
-    def compare_to_ground_truth(self, truth_path):
-        pass
-        # the ground truth is a txt file whose each
-        # line represents the label of the node
-        obtained_results = {label: self.graph._node['people_community'] for label in self.graph.nodes}
-
-        # TODO: consider coming back here, just compare the initial list with
-        # TODO: the resulting one
-

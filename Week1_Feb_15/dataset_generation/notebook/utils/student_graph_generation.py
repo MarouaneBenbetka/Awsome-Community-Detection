@@ -2,6 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import pickle
 import d3fdgraph
+import numpy as np
 import pandas as pd
 from typing import List
 
@@ -250,5 +251,8 @@ class StudentGraphGenerator(object):
         with open(name, 'wb') as file:
             # Serialize and write the object to the file
             pickle.dump(self.generated_weighted_graph, file)
+
+    def generate_adjacency_matrix_binary(self):
+        return nx.to_numpy_array(self.generated_binary_graph)
 
 

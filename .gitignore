@@ -13,6 +13,8 @@ tests/.cache/v/cache/lastfailed
 ##
 ## R Section - See https://github.com/github/gitignore/blob/master/R.gitignore
 ##
+Week2_Feb_22/algorithm_visualization/notebook/media/**
+
 
 # History files
 .Rhistory
