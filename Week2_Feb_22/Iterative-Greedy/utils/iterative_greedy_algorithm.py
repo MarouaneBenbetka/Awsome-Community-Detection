@@ -81,7 +81,6 @@ def destruct(adj_matrix, communities, beta):
 
 
 def reconstruct(adj_matrix, communities, removed_nodes):
-
     # print("removed_nodes : " , removed_nodes)
 
     nodes = [node for node in list(
@@ -102,6 +101,7 @@ def reconstruct(adj_matrix, communities, removed_nodes):
         new_adj_matrix = filter_adj_matrix(adj_matrix, nodes)
 
         for i, Ki in enumerate(communities):
+
             Ki_new = Ki + [node]
 
             new_communities = communities.copy()
@@ -118,8 +118,8 @@ def reconstruct(adj_matrix, communities, removed_nodes):
 
         # communities[best_community_index] = best_community
 
-        if Mdb >= Mdphi:
-            # print("Modularity : " , Mdb)
+        if Mdb >= Mdphi and Mdb != -1:
+
             communities[best_community_index] = best_community
             # print("Added to Community : " , best_community_index , " : " , best_community)
         else:
@@ -138,7 +138,7 @@ def IG(adj_matrix, nb_iterations=100, beta=.4):
     modularity_trace = []
     communities_trace = []
 
-    # frames.append({'C':[i+1 for i in range(adj_matrix.shape[0]) ] , 'Q':0 })
+    # frames.append({'C': [i+1 for i in range(adj_matrix.shape[0])], 'Q': 0})
 
     communities, mod = GCP(adj_matrix)
 

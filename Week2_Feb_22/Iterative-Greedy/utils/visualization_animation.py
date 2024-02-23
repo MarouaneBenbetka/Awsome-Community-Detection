@@ -10,7 +10,7 @@ from matplotlib import cm
 from matplotlib.animation import FuncAnimation
 
 Artists = namedtuple("Artists", ("network_nodes", "network_edges",
-                     "modularity_line", "ax0_title", "ax1_title"))
+                     "modularity_line", "ax0_title", "ax1_title", "nmi_line"))
 HYPERGRAPH_SCALE = 16.0  # 4.0
 SUBGRAPH_SCALE = 4.0  # 0.5
 GREY = (1.0, 1.0, 1.0, 0.75)
@@ -239,13 +239,14 @@ class Animation(object):
 
         self.x = list(range(len(frames)))
         self.y = [frame["Q"] for frame in frames]
+        self.y2 = [frame["NMI"] for frame in frames]
 
         self.is_dark = dark
         plt.rcParams["figure.facecolor"] = "black" if dark else "white"
         plt.rcParams["axes.facecolor"] = "black" if dark else "white"
 
         self.fig, (self.ax0, self.ax1) = plt.subplots(
-            1, 2, figsize=(12, 8), constrained_layout=True)
+            1, 2, figsize=(12, 5), constrained_layout=True)
         self.artists = None
 
     def _calculate_axes_limits(self, node_size, node_border_size):
@@ -255,8 +256,8 @@ class Animation(object):
                 x.append(coordinate[0])
                 y.append(coordinate[1])
 
-        xlim = [min(x)-35, max(x)+35]
-        ylim = [min(y)-35, max(y)+35]
+        xlim = [min(x)-5, max(x)+5]
+        ylim = [min(y)-5, max(y)+5]
 
         xy_pixels = self.ax0.transData.transform(np.vstack([xlim, ylim]).T)
         xpix, ypix = xy_pixels.T
@@ -279,6 +280,7 @@ class Animation(object):
             "ha": "center",
             "color": "white" if self.is_dark else TITLE_GREY
         }
+
         ax0_title = self.ax0.text(
             s="Input Graph", transform=self.ax0.transAxes, **text_args)
 
@@ -286,10 +288,13 @@ class Animation(object):
         self.ax1.clear()
 
         ax1_title = self.ax1.text(
-            s="Modularity (Q)", transform=self.ax1.transAxes, **text_args)
+            s="Modularity : 0.0 , NMI :  0.0", transform=self.ax1.transAxes, **text_args)
+        ax0_title = self.ax0.text(
+            s="Solution Initiale", transform=self.ax0.transAxes, **text_args)
 
         self.ax1.set_xlim([0.0, self.x[-1]])
-        self.ax1.set_ylim([0.0, max(self.y)])
+        # self.ax1.set_ylim([0.0, max(self.y)])
+        self.ax1.set_ylim([0.0, 1])
 
         for spine in self.ax0.spines.values():
             spine.set_visible(False)
@@ -329,10 +334,13 @@ class Animation(object):
                 width=linewidths
             ),
             self.ax1.plot(
-                [], [], color="white" if self.is_dark else DARK_GREY)[0],
+                [], [], color="white" if self.is_dark else DARK_GREY, label="Modularity")[0],
             ax0_title,
-            ax1_title
+            ax1_title,
+            self.ax1.plot(
+                [], [], color="green" if self.is_dark else "green", label="NMI score")[0],
         )
+        self.ax1.legend()
         self.artists.network_nodes.set_edgecolor("w")
 
         return self.artists
@@ -359,9 +367,13 @@ class Animation(object):
         partition = self.interpolated_frames[i]["C"]
         pos = self.interpolated_frames[i]["pos"]
         index = self.interpolated_frames[i]["index"]
+        nmi = self.interpolated_frames[i]["NMI"]
+        nb_partitions = len(set(partition))
 
-        self.artists.ax0_title.set_text(f"Iteration #{index}")
-        self.artists.ax1_title.set_text(f"Modularity (Q) = {Q}")
+        self.artists.ax0_title.set_text(
+            f"Iteration #{index+1} ({nb_partitions} communities)")
+        self.artists.ax1_title.set_text(
+            f"Modularity = {round(Q,4)} , NMI = {round(nmi,4)}")
 
         offsets = [0.0 for _ in range(len(pos.keys()))]
         for node, coord in pos.items():
@@ -374,6 +386,7 @@ class Animation(object):
         self.artists.network_edges.set_verts(edge_pos)
 
         self.artists.modularity_line.set_data(self.x[:index], self.y[:index])
+        self.artists.nmi_line.set_data(self.x[:index], self.y2[:index])
 
         return self.artists
 
@@ -399,6 +412,15 @@ class Animation(object):
         return anim
 
 
-def louvain_animation(adj_matrix, frames, dark=False, duration=15, filename=None, dpi=None, seed=2):
+def louvain_animation(adj_matrix, frames, nmi_trace, dark=False, duration=15, filename=None, dpi=None, seed=2):
+
+    if nmi_trace:
+        for i, frame in enumerate(frames):
+            frame["NMI"] = nmi_trace[i]
+    else:
+        for i, frame in enumerate(frames):
+            frame["NMI"] = 0
+
     anim = Animation(adj_matrix, frames, seed, dark)
+
     return anim.show(duration, filename, dpi)
