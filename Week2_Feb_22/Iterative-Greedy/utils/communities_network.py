@@ -30,6 +30,8 @@ def modularity(adj_matrix: np.ndarray, communities: list) -> float:
     C = np.zeros_like(mod_matrix)
 
     for community in communities:
+        if len(community) <= 1:
+            continue
         for i, j in combinations(community, 2):
             C[i, j] = 1.0
             C[j, i] = 1.0
