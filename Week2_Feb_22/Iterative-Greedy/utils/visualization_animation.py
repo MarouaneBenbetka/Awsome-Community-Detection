@@ -19,6 +19,17 @@ DARK_GREY = (0.3, 0.3, 0.3, 1.0)
 LIGHT_GREY = (0.6, 0.6, 0.6, 1.0)
 
 
+def communities_to_frame(n, communities, modularity):
+
+    nodes = list(range(n))
+
+    for i, community in enumerate(communities):
+        for node in community:
+            nodes[node] = i+1
+
+    return {'C': nodes, 'Q': modularity}
+
+
 ################
 # CLUSTER LAYOUT
 ################
@@ -234,7 +245,7 @@ class Animation(object):
         plt.rcParams["axes.facecolor"] = "black" if dark else "white"
 
         self.fig, (self.ax0, self.ax1) = plt.subplots(
-            1, 2, figsize=(12, 8))
+            1, 2, figsize=(12, 8), constrained_layout=True)
         self.artists = None
 
     def _calculate_axes_limits(self, node_size, node_border_size):
@@ -270,10 +281,10 @@ class Animation(object):
         }
         ax0_title = self.ax0.text(
             s="Input Graph", transform=self.ax0.transAxes, **text_args)
-        
+
         self.ax0.clear()
         self.ax1.clear()
-        
+
         ax1_title = self.ax1.text(
             s="Modularity (Q)", transform=self.ax1.transAxes, **text_args)
 
@@ -292,7 +303,6 @@ class Animation(object):
         self.ax1.tick_params(
             axis="y", colors=GREY if self.is_dark else LIGHT_GREY)
         plt.setp(self.ax1.get_xticklabels(), visible=False)
-        plt.tight_layout(pad=3.0)
 
         num_nodes = self.G.number_of_nodes()
         node_size = 10200 / num_nodes
@@ -350,9 +360,6 @@ class Animation(object):
         pos = self.interpolated_frames[i]["pos"]
         index = self.interpolated_frames[i]["index"]
 
-        
-        
-        
         self.artists.ax0_title.set_text(f"Iteration #{index}")
         self.artists.ax1_title.set_text(f"Modularity (Q) = {Q}")
 
@@ -371,7 +378,6 @@ class Animation(object):
         return self.artists
 
     def show(self, duration=15, filename=None, dpi=None):
-        # TODO remove +1
 
         fps = int(len(self.interpolated_frames) / duration + 1)
         anim = FuncAnimation(
@@ -384,14 +390,11 @@ class Animation(object):
             blit=True
         )
 
-        if not filename:
-            plt.show()
-        else:
-            anim.save(
-                filename,
-                fps=fps,
-                dpi=dpi
-            )
+        anim.save(
+            filename,
+            fps=fps,
+            dpi=dpi
+        )
 
         return anim
 
