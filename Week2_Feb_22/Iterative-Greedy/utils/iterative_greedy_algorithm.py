@@ -138,7 +138,7 @@ def IG(adj_matrix, nb_iterations=100, beta=.4):
     modularity_trace = []
     communities_trace = []
 
-    # frames.append({'C':[i+1 for i in range(adj_matrix.shape[0]) ] , 'Q':0 })
+    # frames.append({'C': [i+1 for i in range(adj_matrix.shape[0])], 'Q': 0})
 
     communities, mod = GCP(adj_matrix)
 
