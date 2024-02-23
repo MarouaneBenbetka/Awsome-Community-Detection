@@ -256,8 +256,8 @@ class Animation(object):
                 x.append(coordinate[0])
                 y.append(coordinate[1])
 
-        xlim = [min(x)-35, max(x)+35]
-        ylim = [min(y)-35, max(y)+35]
+        xlim = [min(x)-5, max(x)+5]
+        ylim = [min(y)-5, max(y)+5]
 
         xy_pixels = self.ax0.transData.transform(np.vstack([xlim, ylim]).T)
         xpix, ypix = xy_pixels.T
@@ -289,6 +289,8 @@ class Animation(object):
 
         ax1_title = self.ax1.text(
             s="Modularity : 0.0 , NMI :  0.0", transform=self.ax1.transAxes, **text_args)
+        ax0_title = self.ax0.text(
+            s="Solution Initiale", transform=self.ax0.transAxes, **text_args)
 
         self.ax1.set_xlim([0.0, self.x[-1]])
         # self.ax1.set_ylim([0.0, max(self.y)])
@@ -366,8 +368,10 @@ class Animation(object):
         pos = self.interpolated_frames[i]["pos"]
         index = self.interpolated_frames[i]["index"]
         nmi = self.interpolated_frames[i]["NMI"]
+        nb_partitions = len(set(partition))
 
-        self.artists.ax0_title.set_text(f"Iteration #{index}")
+        self.artists.ax0_title.set_text(
+            f"Iteration #{index+1} ({nb_partitions} communities)")
         self.artists.ax1_title.set_text(
             f"Modularity = {round(Q,4)} , NMI = {round(nmi,4)}")
 
