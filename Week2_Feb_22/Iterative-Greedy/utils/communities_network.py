@@ -70,7 +70,7 @@ def calc_nmi(true_labels, pred_labels):
     true_labels = [label for node, label in true_labels]
     pred_labels = [label for node, label in pred_labels]
 
-    return metrics.normalized_mutual_info_score(true_labels, pred_labels, average_method='min')
+    return metrics.normalized_mutual_info_score(true_labels, pred_labels)
 
 
 def generation_transformation_dict(G, nodes):
