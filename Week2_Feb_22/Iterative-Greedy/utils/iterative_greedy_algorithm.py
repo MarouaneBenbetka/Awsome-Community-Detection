@@ -61,7 +61,7 @@ def GCP(adj_matrix: np.ndarray) -> list:
     return communities, Mdb
 
 
-def destruct(adj_matrix, communities, beta):
+def destruct(adj_matrix: np.ndarray, communities: list, beta: float) -> tuple:
 
     nodes = list(range(adj_matrix.shape[0]))
 
@@ -80,7 +80,7 @@ def destruct(adj_matrix, communities, beta):
     return removed_nodes, filtered_communities
 
 
-def reconstruct(adj_matrix, communities, removed_nodes):
+def reconstruct(adj_matrix: np.ndarray, communities: list, removed_nodes: list) -> tuple:
 
     nodes = [node for node in list(
         range(adj_matrix.shape[0])) if node not in removed_nodes]
@@ -123,7 +123,7 @@ def reconstruct(adj_matrix, communities, removed_nodes):
     return communities, Mdb
 
 
-def IG(adj_matrix, nb_iterations=100, beta=.4):
+def IG(adj_matrix: np.ndarray, nb_iterations=100, beta=.4) -> tuple:
 
     frames = []
     modularity_trace = []
