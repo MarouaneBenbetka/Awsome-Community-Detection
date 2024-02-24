@@ -422,5 +422,5 @@ def louvain_animation(adj_matrix, frames, nmi_trace, dark=False, duration=15, fi
             frame["NMI"] = 0
 
     anim = Animation(adj_matrix, frames, seed, dark)
-
+    print(f"The animation GIF is saved in {filename}")
     return anim.show(duration, filename, dpi)

@@ -15,3 +15,14 @@ def read_community_labels_file_synth(file_path):
             node, label = line.split()
             res.append((int(node)-1, int(label)))
         return res
+
+
+def save_predicted_labels(labels, file_path):
+
+    if not file_path.endswith('.txt'):
+        file_path = file_path+'.txt'
+
+    with open(file_path, 'w') as file:
+        for node, label in labels:
+            file.write(f"{node} {label}\n")
+    print(f"Predicted labels saved to {file_path}")
