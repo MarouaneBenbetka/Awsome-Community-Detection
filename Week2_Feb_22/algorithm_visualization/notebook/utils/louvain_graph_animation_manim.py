@@ -146,6 +146,15 @@ class LouvainScene(Scene):
         for vertex in vertices:
             self.manim_graph._remove_vertex(vertex)
     
+    def _add_edges(self, edges):
+        aa, bb = zip(*edges)
+        aa_manim = self._get_manim_vertex_keys_from_nodes(aa)
+        bb_manim = self._get_manim_vertex_keys_from_nodes(bb)
+        to_add_edges = list(zip(aa_manim, bb_manim))
+
+        for edge in to_add_edges:
+            self.manim_graph._add_edge(edge)
+
     def animate_reduce_nodes_to_nodes(self, clusters, nodes):
         clusters_nodes_flattened = []
         for cluster in clusters:
@@ -156,21 +165,44 @@ class LouvainScene(Scene):
 
         manim_clusters = [self._get_manim_vertices_from_nodes(cluster) for cluster in clusters]
         manim_representative_nodes = self._get_manim_vertices_from_nodes(nodes)
+        
+        
+        to_add_edges = []
+
+            # get all the neighbors of the cluster nodes
+        for cluster, rep in zip(clusters, nodes):
+            for n in cluster:
+                current_node_neighbors = nx.neighbors(self.to_solve_graph, n)
+                for neighbor in current_node_neighbors:
+                    to_add_edges.append((rep, neighbor))
+        
+        # we add the edges from the representative node
+        # to the nodes connected with the deleted nodes
+        
+        
 
         # animate vertices to vertex
         animations = []
         for cluster, representative in zip(manim_clusters, manim_representative_nodes):
+            if representative in cluster: 
+                cluster.remove(representative)
+
             animations.append(self._animate_manim_cluster_to_vertex(cluster, representative))
+
+
+
+
         # we can play all the actions in a sequential manner
         # or we can do it in parallel
         flattened_animations = []
         for i in animations:
             for j in i:
                 flattened_animations.append(j)
-
-        self.play(*flattened_animations)
-        self._delete_nodes(to_delete_nodes)
-        
+        if len(flattened_animations) > 0:
+            self.play(*flattened_animations)
+            self._delete_nodes(to_delete_nodes)
+            self._add_edges(to_add_edges) 
+               
 
     
     def _create_texts_for_ordered_nodes(self, ordered_nodes):
@@ -345,21 +377,15 @@ class LouvainScene(Scene):
         self.wait()
 
     def animate_repalce_graph(self, new_graph):
-        # keep reference to the old manim graph
-        old_manim_graph = self.manim_graph
-        
-        self.play(FadeOut(self.manim_graph))
-        # update the graph to solve
+        # keep reference to the old graph and the new graph
         self.to_solve_graph = new_graph
+        self.old_graph = self.manim_graph
 
-        # self.play(FadeOut(self.manim_graph))
+        # animate the transformation
         self._build_manim_graph()
-        # The error is coming from here
-        self.play(Transform(old_manim_graph, self._build_manim_graph()))
-        # self.remove(old_manim_graph)
+        self.remove(self.old_graph)
+        self.play(TransformFromCopy(self.old_graph, self.manim_graph))
         
-        self.play(Create(self.manim_graph))
-        self.wait()
 
     # highlight the edges whose one node at least is in community
     def animate_highlight_edges_concerning_communities(self, graph, nodes):
@@ -433,6 +459,7 @@ class LouvainScene(Scene):
     def animate_reduce_phase(self, new_graph):
         # get the new graph from the graph history and replace it directly
         self.animate_repalce_graph(new_graph=new_graph)
+        self.wait()
         
 
     # the entire visualization will be done here
@@ -442,11 +469,11 @@ class LouvainScene(Scene):
             raise ValueError('self.louvain_machine is None. Consider setting it to a non None value')
         # we will see the history of the graphs
         # create the graph to visualize
-        self._build_manim_graph()
+        # self._build_manim_graph()
         
         # shoe the graph with animations
         # THE CODE BEFORE STARTS HERE
-        self.animate_create_manim_graph(self.to_solve_graph)
+        # self.animate_create_manim_graph(self.to_solve_graph)
         
         # TODO: we might need to uncomment this
         # self.wait()
@@ -469,7 +496,7 @@ class LouvainScene(Scene):
             # current_actions contains all the possible actions in the first phase
             # of the current pass
             
-            self.animate_assign_phase(current_actions)
+            # self.animate_assign_phase(current_actions)
 
             # TODO: we might consider uncommenting this
             # self.wait()
