@@ -4,7 +4,7 @@ import numpy as np
 from manim import *
 # from louvain4 import Action, LouvainMachine
 from utils.louvain4 import Action, LouvainMachine
-from typing import Hashable
+from typing import Hashable, Tuple
 
 """
 
@@ -25,6 +25,7 @@ class LouvainScene(Scene):
         self.node_color_store = dict()
 
         self.status_text = None
+        self.status_table = None
         super().__init__(**kwargs)
 
     def consider_louvain_machine(self, louvain_machine: LouvainMachine):
@@ -49,6 +50,7 @@ class LouvainScene(Scene):
         return color_code
 
     def _color_manim_graph_nodes(self, vertices, colors, animate=False): 
+        
         if type(colors) != list:
             colors = [colors] * len(vertices)
         
@@ -56,7 +58,59 @@ class LouvainScene(Scene):
         run_time = 1 if animate else 0
 
         for c, v in zip(colors, vertices):
-            self.play(v.animate.set_color(c), run_time=run_time)
+            self.play(v.animate.set_fill_color(c), run_time=run_time)
+
+    def generate_status_table(self, node: str, possible_actions: List[Tuple[str, float]]):
+        # This method generates the status table with the specified title and columns
+
+        # Create data for the table
+        table_data = [["Destination Community", "Gain in Modularity"]]
+        for destination_community, modularity_gain in possible_actions:
+            table_data.append([str(destination_community), str(modularity_gain)])
+
+        # Create the table
+        self.status_table = Table(table_data)
+        self.status_table_title = Text(f"Possible actions for {node} node")
+        self.status_table.move_to([3.5, 0, 0])
+        # Calculate the position of the table and title
+        table_height = len(table_data) * 0.5  # Assuming each row height is 0.5
+        table_width = max(len(row) for row in table_data) * 1.5  # Assuming each column width is 1.5
+        title_height = 1  # Assuming title height is 1
+
+        # Position the title and table in the right half of the scene
+        self.status_table_title.to_edge(UP)
+        self.status_table.next_to(self.status_table_title, DOWN)
+        self.status_table_title.shift((self.camera.frame_width - table_width / 4) * RIGHT)
+        # self.status_table.shift((self.camera.frame_width - table_width / 4) * RIGHT)
+        self.status_table.scale(0.4)
+        # Add the title and table to the scene
+        self.add(self.status_table_title, self.status_table)
+
+
+    def update_status_table(self, possible_actions: List[Tuple[str, float]]):
+        # This method updates the content of the status table
+        if self.status_table is not None:
+            # Create updated data for the table
+            table_data = [["Destination Community", "Gain in Modularity"]]
+            for destination_community, modularity_gain in possible_actions:
+                table_data.append([str(destination_community), str(modularity_gain)])
+
+            # Update the table with new data
+            self.status_table.data = table_data
+
+    def highlight_selected_row(self, row_index: int):
+        """
+        Highlight the selected row in the table by changing its background color to yellow.
+        
+        Parameters:
+            row_index (int): Index of the row to be highlighted.
+        """
+        if self.status_table is not None:
+            # Check if the row_index is valid
+            if 0 <= row_index < len(self.status_table.data):
+                # Iterate through each cell in the selected row and change its background color to yellow
+                for cell in self.status_table.data[row_index]:
+                    cell.set_color(YELLOW)  # Assuming YELLOW is defined somewhere in your code
 
 
 
@@ -91,18 +145,43 @@ class LouvainScene(Scene):
         self.node_color_store = color_mapping
         return self.manim_graph
     
-    # create the graph and show it on the screen
-    def animate_create_manim_graph(self, graph: nx.Graph):
-        # take the networkx graph, convert it to manim graph
-        # and return the manim graph
+    def _compute_left_side_center(self):
+        # compute the center of the left side
+        return [0, 0, 0]
 
-        # extract vertices and edges from the old graph
-        self.add(self.manim_graph)
-        # self.status_text.animate()
-        self.play(Create(self.manim_graph))
+    # # create the graph and show it on the screen
+    # def animate_create_manim_graph(self, graph: nx.Graph):
+    #     # take the networkx graph, convert it to manim graph
+    #     # and return the manim graph
+
+    #     # extract vertices and edges from the old graph
+    #     self.add(self.manim_graph)
+    #     # self.status_text.animate()
+    #     self.play(Create(self.manim_graph))
         
-        # TODO: we mgith consider removing this as well
-        # self.wait()
+    #     # TODO: we mgith consider removing this as well
+    #     # self.wait()
+    def animate_create_manim_graph(self, graph: nx.Graph):
+        # Take the networkx graph, convert it to manim graph
+        # and display the manim graph on the left half of the screen
+
+        # Extract vertices and edges from the old graph
+        self.add(self.manim_graph)
+
+        # Calculate the position of the graph
+        graph_width = 6  # Assuming a width of 6 units for the graph
+        graph_height = 4  # Assuming a height of 4 units for the graph
+
+        # Position the graph on the left half of the screen
+        self.manim_graph.scale(0.6)
+
+        # move to the center of the left side
+        left_side_center = self._compute_left_side_center()
+        self.manim_graph.move_to([-3, 0, 0])
+
+        # Play the animation to create the graph
+        self.play(Create(self.manim_graph))
+
 
 
     def _move_order_text_to_target_node(self, text, manim_node):
@@ -374,7 +453,13 @@ class LouvainScene(Scene):
 
     def set_color_nodes(self, nodes, colors):
         colored_manim_vertices = self._get_manim_vertices_from_nodes(nodes)
-        self._color_manim_graph_nodes(colored_manim_vertices, colors=colors, animate=False)
+        colored_manim_vertex_keys = self._get_manim_vertex_keys_from_nodes(nodes)
+        for key, color in zip(colored_manim_vertex_keys, colors):
+            self.manim_graph.vertices[key].set_color(color)
+            
+            
+            
+        # self._color_manim_graph_nodes(colored_manim_vertices, colors=colors, animate=False)
 
     def animate_assign_nodes_to_communities(self, nodes_parition, communities):
         # nodes partition: is a list of lists
@@ -416,6 +501,8 @@ class LouvainScene(Scene):
         self._build_manim_graph()
 
         self.remove(self.old_graph)
+        self.manim_graph.scale(0.5)
+        self.manim_graph.move_to([3.5, 0, 0])
         self.play(TransformFromCopy(self.old_graph, self.manim_graph))
         
 
@@ -428,10 +515,28 @@ class LouvainScene(Scene):
     # merge the edges into one edge
     def animate_merge_edges_to_one_edge(self):
         pass
+    
+
+    def update_status_text(self, new_text: str):
+        # This method updates the status text displayed on the screen
+        if "status_text" in self.mobject_store:
+            status_text_obj = self.mobject_store["status_text"]
+            status_text_obj.become(Text(new_text))
+
+    def remove_status_table(self):
+        # This method removes the status table from the scene
+        if self.status_table is not None:
+            self.remove(self.status_table)
+            self.remove(self.status_table_title)  # Also remove the title if it exists
+            self.status_table = None  # Reset the status table object
 
     def setup_status_text(self):
+        # setup the text and put it in the mobject store
         self.status_text = Text('status text')
+        self.status_text.to_edge(UP)
+        self.mobject_store['status_text'] = self.status_text
         self.play(FadeIn(self.status_text))
+    
     # just a setup function
     def setup(self):
         # consider generating the intermediate results necessary for visualization
@@ -467,11 +572,16 @@ class LouvainScene(Scene):
             node_actions: List[Action]
             # print('the node is here')
             # print(node)
-
+            
 
             # TODO: note here
             # print(phase_actions)
             node_actions, max_action = phase_actions[i]
+
+            
+            # ---> show the actions table
+            possible_actions = [(a.destination_community, a.value) for a in node_actions]
+            self.generate_status_table(str(node), possible_actions)
 
             candidates = []
             for action in node_actions: 
@@ -483,35 +593,26 @@ class LouvainScene(Scene):
                 FocusOn(*self._get_manim_vertices_from_nodes([node])),
                 ScaleInPlace(*self._get_manim_vertices_from_nodes([node]), 1.3)
                 )
+            self.wait()
             self.animate_highlight_nodes(candidates, highlight_colors=BLUE)
             # self.wait()
 
-            
+            self.wait()
             # target node
             target_node = max_action.node
             
             self.animate_highlight_nodes([target_node], highlight_colors=BLUE)
-
+            
+            # TODO: consider adding something here to highlight the rows of the table
+            # self.highlight_status_table_target_rows()
+            self.wait()
             # get the color of the target node
             target_node_color = self.node_color_store[target_node]
             self.set_color_nodes([node], [target_node_color])
-            # self.animate_color_nodes([node], colors=[target_node_color])
-            # self.animate_highlight_nodes([target_node])
-            # change the color of the current node to the color of the target node
 
+            self.remove_status_table()
+        
 
-            # change the color of the current node to match the color of the target node
-            # TODO: back back here
-
-            # self.animate_reduce_nodes_to_nodes([[node]], [target_node])
-            # if (target_node != node): #if the node changed the community 
-            #     self._delete_nodes([node])
-                # We dele the current node 'node'
-
-            # TODO: adding the below line has been the solution for a previous error that was 
-            # indicating that it is impossible to draw a line with two points having the same coordinates
-            # self._delete_nodes([node])
-            # self.wait()
 
 
 
