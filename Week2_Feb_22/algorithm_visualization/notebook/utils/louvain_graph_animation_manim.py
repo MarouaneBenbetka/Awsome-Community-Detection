@@ -22,6 +22,8 @@ class LouvainScene(Scene):
         self.louvain_machine = None
         self.mobject_store = dict()
 
+        self.node_color_store = dict()
+
         self.status_text = None
         super().__init__(**kwargs)
 
@@ -46,16 +48,29 @@ class LouvainScene(Scene):
         
         return color_code
 
-    def _color_manim_graph_nodes(self): 
-        pass
+    def _color_manim_graph_nodes(self, vertices, colors, animate=False): 
+        if type(colors) != list:
+            colors = [colors] * len(vertices)
+        
+        # compute the runtime
+        run_time = 1 if animate else 0
+
+        for c, v in zip(colors, vertices):
+            self.play(v.animate.set_color(c), run_time=run_time)
+
+
 
     def _build_manim_graph(self):
+        COLORS = [RED, GREEN, BLUE, ORANGE, YELLOW, GREY_BROWN] # here is the def. of the colors
+        
         nx_graph = self.to_solve_graph
         
         
         # extract nodes and vertices from the old graph
         vertices = nx_graph.nodes
         labels = {i: str(i) for i in vertices}
+        color_mapping = {i: COLORS[j%len(COLORS)] for i, j in zip(vertices, range(len(vertices)))}
+        
         # TODO: we might consider removing the inequality if necessary
         # the lbrary might have an automated handling for loop edges 
         edges = [(a, b) for a, b in nx_graph.edges if a != b]
@@ -63,6 +78,7 @@ class LouvainScene(Scene):
         print(edges)
         graph = Graph(vertices, edges, layout='circular', layout_scale=3, labels=labels)
         
+        # self.animate_color_nodes
         self.manim_graph = graph
 
         self.node_vertex_mapping = {i: j for i, j in zip(self.to_solve_graph.nodes, vertices)}
@@ -72,7 +88,7 @@ class LouvainScene(Scene):
 
         self.community_color_mapping = \
             {self.to_solve_graph._node[i]['community']: self.object_to_color(i) for i in self.to_solve_graph.nodes}
-        
+        self.node_color_store = color_mapping
         return self.manim_graph
     
     # create the graph and show it on the screen
@@ -82,7 +98,7 @@ class LouvainScene(Scene):
 
         # extract vertices and edges from the old graph
         self.add(self.manim_graph)
-        self.status_text.animate()
+        # self.status_text.animate()
         self.play(Create(self.manim_graph))
         
         # TODO: we mgith consider removing this as well
@@ -146,6 +162,15 @@ class LouvainScene(Scene):
         for vertex in vertices:
             self.manim_graph._remove_vertex(vertex)
     
+    def _add_edges(self, edges):
+        aa, bb = zip(*edges)
+        aa_manim = self._get_manim_vertex_keys_from_nodes(aa)
+        bb_manim = self._get_manim_vertex_keys_from_nodes(bb)
+        to_add_edges = list(zip(aa_manim, bb_manim))
+
+        for edge in to_add_edges:
+            self.manim_graph._add_edge(edge)
+
     def animate_reduce_nodes_to_nodes(self, clusters, nodes):
         clusters_nodes_flattened = []
         for cluster in clusters:
@@ -156,21 +181,45 @@ class LouvainScene(Scene):
 
         manim_clusters = [self._get_manim_vertices_from_nodes(cluster) for cluster in clusters]
         manim_representative_nodes = self._get_manim_vertices_from_nodes(nodes)
+        
+        
+        to_add_edges = []
+
+            # get all the neighbors of the cluster nodes
+        for cluster, rep in zip(clusters, nodes):
+            for n in cluster:
+                current_node_neighbors = nx.neighbors(self.to_solve_graph, n)
+                for neighbor in current_node_neighbors:
+                    to_add_edges.append((rep, neighbor))
+        
+        # we add the edges from the representative node
+        # to the nodes connected with the deleted nodes
+        
+        
 
         # animate vertices to vertex
         animations = []
         for cluster, representative in zip(manim_clusters, manim_representative_nodes):
+            if representative in cluster: 
+                cluster.remove(representative)
+                pass
+
             animations.append(self._animate_manim_cluster_to_vertex(cluster, representative))
+
+
+
+
         # we can play all the actions in a sequential manner
         # or we can do it in parallel
         flattened_animations = []
         for i in animations:
             for j in i:
                 flattened_animations.append(j)
-
-        self.play(*flattened_animations)
-        self._delete_nodes(to_delete_nodes)
-        
+        if len(flattened_animations) > 0:
+            self.play(*flattened_animations)
+            self._delete_nodes(to_delete_nodes)
+            self._add_edges(to_add_edges) 
+               
 
     
     def _create_texts_for_ordered_nodes(self, ordered_nodes):
@@ -270,7 +319,12 @@ class LouvainScene(Scene):
 
         # self.manim_graph.vertices[node].set_fill(highlight_color)
         # highlight all the vertices
-        self.play(*[FadeToColor(vertex, highlight_colors[i]) for vertex, i in zip(vertices, range(len(vertices)))])
+        self.play(
+            *[FadeToColor(vertex, highlight_colors[i]) for vertex, i in zip(vertices, range(len(vertices)))],
+            *[ScaleInPlace(vertex, 1.2) for vertex in vertices]
+            )
+        
+        # self.play(*[FocusOn(vertex)])
         
         # recover the initial state of each of the vertices
         self.play(*[Restore(vertex) for vertex in vertices])
@@ -308,10 +362,19 @@ class LouvainScene(Scene):
         # highlight the vertices and recover states
         self._highlight_manim_graph_nodes(highlighted_community_manim_nodes, highlight_colors=RED)
         
-    def animate_highlight_nodes(self, nodes):
+    def animate_highlight_nodes(self, nodes, highlight_colors=RED):
         highlighted_community_manim_nodes = [self.node_vertex_mapping[node] for node in nodes]
-        self._highlight_manim_graph_nodes(highlighted_community_manim_nodes, highlight_colors=GREEN)
+        self._highlight_manim_graph_nodes(highlighted_community_manim_nodes, highlight_colors)
 
+    def animate_color_nodes(self, nodes, colors):
+
+        # colored_manim_vertices = [self.node_vertex_mapping[node] for node in nodes]
+        colored_manim_vertices = self._get_manim_vertices_from_nodes(nodes)
+        self._color_manim_graph_nodes(colored_manim_vertices, colors=colors, animate=True)
+
+    def set_color_nodes(self, nodes, colors):
+        colored_manim_vertices = self._get_manim_vertices_from_nodes(nodes)
+        self._color_manim_graph_nodes(colored_manim_vertices, colors=colors, animate=False)
 
     def animate_assign_nodes_to_communities(self, nodes_parition, communities):
         # nodes partition: is a list of lists
@@ -345,21 +408,16 @@ class LouvainScene(Scene):
         self.wait()
 
     def animate_repalce_graph(self, new_graph):
-        # keep reference to the old manim graph
-        old_manim_graph = self.manim_graph
-        
-        self.play(FadeOut(self.manim_graph))
-        # update the graph to solve
+        # keep reference to the old graph and the new graph
         self.to_solve_graph = new_graph
+        self.old_graph = self.manim_graph
 
-        # self.play(FadeOut(self.manim_graph))
+        # animate the transformation
         self._build_manim_graph()
-        # The error is coming from here
-        self.play(Transform(old_manim_graph, self._build_manim_graph()))
-        # self.remove(old_manim_graph)
+
+        self.remove(self.old_graph)
+        self.play(TransformFromCopy(self.old_graph, self.manim_graph))
         
-        self.play(Create(self.manim_graph))
-        self.wait()
 
     # highlight the edges whose one node at least is in community
     def animate_highlight_edges_concerning_communities(self, graph, nodes):
@@ -380,9 +438,20 @@ class LouvainScene(Scene):
         # self.status_text = Text("status text")
         # self.status_text.target.generate_target()
         
-        self.setup_status_text()
+        # self.setup_status_text()
         self._build_manim_graph()
         self.animate_create_manim_graph(self.to_solve_graph)
+        nodes = self.to_solve_graph.nodes
+        node_colors = [self.node_color_store[node] for node in nodes]
+        self.set_color_nodes(nodes, node_colors)
+
+    def setup_node_colors(self):
+        # change the color of the current nodes to the suitable color
+        current_nodes = self.to_solve_graph.nodes
+        current_colors = [self.node_color_store[node] for node in current_nodes]
+        self.set_color_nodes(current_nodes, current_colors)
+        pass
+
 
     def animate_assign_phase(self, phase_actions):
         # the actions_history is a list of phase_actions
@@ -396,12 +465,12 @@ class LouvainScene(Scene):
         for i, node in zip(range(len(phase_actions)), self.to_solve_graph.nodes):
             max_action: Action
             node_actions: List[Action]
-            print('the node is here')
-            print(node)
+            # print('the node is here')
+            # print(node)
 
 
             # TODO: note here
-            print(phase_actions)
+            # print(phase_actions)
             node_actions, max_action = phase_actions[i]
 
             candidates = []
@@ -410,16 +479,33 @@ class LouvainScene(Scene):
             candidates = list(set(candidates))
 
             # HIGHLIGHT THE NODES CONNECTED TO THE CURRENT NODE
-            self.animate_highlight_nodes(candidates)
-            self.wait()
+            self.play(
+                FocusOn(*self._get_manim_vertices_from_nodes([node])),
+                ScaleInPlace(*self._get_manim_vertices_from_nodes([node]), 1.3)
+                )
+            self.animate_highlight_nodes(candidates, highlight_colors=BLUE)
+            # self.wait()
 
             
             # target node
             target_node = max_action.node
-            self.animate_highlight_nodes([target_node])
-            self.animate_reduce_nodes_to_nodes([[node]], [target_node])
-            if (target_node != node): #if the node changed the community 
-                self._delete_nodes([node])
+            
+            self.animate_highlight_nodes([target_node], highlight_colors=BLUE)
+
+            # get the color of the target node
+            target_node_color = self.node_color_store[target_node]
+            self.set_color_nodes([node], [target_node_color])
+            # self.animate_color_nodes([node], colors=[target_node_color])
+            # self.animate_highlight_nodes([target_node])
+            # change the color of the current node to the color of the target node
+
+
+            # change the color of the current node to match the color of the target node
+            # TODO: back back here
+
+            # self.animate_reduce_nodes_to_nodes([[node]], [target_node])
+            # if (target_node != node): #if the node changed the community 
+            #     self._delete_nodes([node])
                 # We dele the current node 'node'
 
             # TODO: adding the below line has been the solution for a previous error that was 
@@ -434,6 +520,7 @@ class LouvainScene(Scene):
         # get the new graph from the graph history and replace it directly
         self.animate_repalce_graph(new_graph=new_graph)
         
+        
 
     # the entire visualization will be done here
     def construct(self):
@@ -442,11 +529,11 @@ class LouvainScene(Scene):
             raise ValueError('self.louvain_machine is None. Consider setting it to a non None value')
         # we will see the history of the graphs
         # create the graph to visualize
-        self._build_manim_graph()
+        # self._build_manim_graph()
         
         # shoe the graph with animations
         # THE CODE BEFORE STARTS HERE
-        self.animate_create_manim_graph(self.to_solve_graph)
+        # self.animate_create_manim_graph(self.to_solve_graph)
         
         # TODO: we might need to uncomment this
         # self.wait()
@@ -469,6 +556,7 @@ class LouvainScene(Scene):
             # current_actions contains all the possible actions in the first phase
             # of the current pass
             
+            self.setup_node_colors()
             self.animate_assign_phase(current_actions)
 
             # TODO: we might consider uncommenting this
