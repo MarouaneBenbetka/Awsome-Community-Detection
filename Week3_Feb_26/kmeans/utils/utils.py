@@ -3,6 +3,8 @@ import networkx as nx
 import numpy as np
 from scipy.linalg import eigh
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 
 
 def similarity_matrix(A: np.ndarray) -> np.ndarray:
@@ -173,7 +175,7 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
         for _ in range(k-M):
 
             if not unselected_nodes:
-                break
+                raise ValueError("No more nodes to select , k is too large")
 
             max_distance_seed = max(
                 unselected_nodes, key=lambda node: np.sum(D[initial_seeds][:, node]))
@@ -184,10 +186,39 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
             unselected_nodes.remove(max_distance_seed)
             M += 1
 
-    return initial_seeds, M
+    return initial_seeds
 
 
-def local_expansion_kmeans(A: np.ndarray, Kmin: int, Kmax: int) -> list:
+def PCA_reduction(D: np.ndarray, epsilon=10e-4) -> np.ndarray:
+    """
+    This function takes a distance matrix D and returns the reduced matrix using PCA.
+    """
+
+    pca = PCA()
+    X = pca.fit_transform(D)
+
+    eigenvalues = pca.explained_variance_
+    print(eigenvalues)
+    positive_indices = np.where(eigenvalues > epsilon)[0]
+
+    X_transformed = X[:, positive_indices]
+
+    return X_transformed
+
+
+def kmeans_clustering(X: np.ndarray, K: int, initial_seeds: list) -> np.ndarray:
+    """
+    This function takes a matrix X and the number of clusters K and returns the cluster indices.
+    """
+    kmeans = KMeans(n_clusters=K, random_state=0, init=initial_seeds).fit(X)
+    return kmeans.labels_
+
+
+def calculate_modularity(adj_matrix: np.ndarray, communities: list) -> float:
+    pass
+
+
+def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int) -> list:
     """
     This function implements the local expansion k-means algorithm.
     It takes a weighted adjacency matrix A, minimum number of clusters Kmin, and maximum number of clusters Kmax.
@@ -200,27 +231,27 @@ def local_expansion_kmeans(A: np.ndarray, Kmin: int, Kmax: int) -> list:
     # Calculate the distance matrix D using S
     D = distance_matrix(S)
 
-    # Mapping all nodes of the complex network into p-dimensional Euclidean space with PCA
-    pca = PCA(n_components=2)
-
-    X = pca.fit_transform(D)
+    D_transformed = PCA_reduction(D)
 
     Cmax = []
     Qmax = 0
 
     for K in range(Kmin, Kmax + 1):
-        # Select K initial seeds using the local expansion strategy (Algorithm 1)
-        initial_seeds = local_expension(G, K)
 
-        # Identify K communities C1, C2, ..., CK with k-means algorithm
-        kmeans = KMeans(n_clusters=K, random_state=0).fit(X)
-        communities = kmeans.labels_
+        try:
+            initial_seeds = local_expension(G, D, K)
 
-        # Calculate the similarity-based modularity Qs
-        Qs = calculate_modularity(communities, S)
+            kmeans = KMeans(n_clusters=K, random_state=0).fit(X)
+            communities = kmeans.labels_
 
-        if Qs > Qmax:
-            Qmax = Qs
-            Cmax = communities
+            # Calculate the similarity-based modularity Qs
+            Qs = calculate_modularity(communities, S)
+
+            if Qs > Qmax:
+                Qmax = Qs
+                Cmax = communities
+        except:
+            print("K : ", K, " is too large")
+            break
 
     return Cmax
