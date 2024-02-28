@@ -110,19 +110,15 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
     initial_seeds = []
 
     cliques = find_cliques(G, adj_matrix)
-    print("clique :", cliques)
 
     cliques_sorted = sorted(cliques, key=lambda x: x["weight"], reverse=True)
 
     unselected_nodes = set(G.nodes())
-    print("Unselected Nodes :", unselected_nodes)
 
     skip_nodes = []
 
     M = 0
     while M < k and cliques_sorted:
-
-        print("Unselected Nodes :", unselected_nodes)
 
         max_degree_node = max(unselected_nodes, key=lambda node:  G.degree(
             node) * int(node not in skip_nodes))
@@ -153,13 +149,9 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
                 fitness = fitness_function(
                     adj_matrix, chosen_clique + [node])
 
-                print("Node : ", node, "Fitness : ", fitness)
-
                 if fitness > fitness_value:
                     fitness_value = fitness
                     chosen_clique.append(node)
-
-        print("Chosen Clique :", chosen_clique)
 
         initial_seeds.append(centroid)
 
@@ -167,11 +159,8 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
 
         M += 1
 
-    print("M : ", M)
-    print("Intial Seed : ", initial_seeds)
     if M < k:
 
-        print("Distance Matrix : \n", D)
         for _ in range(k-M):
 
             if not unselected_nodes:
@@ -182,7 +171,6 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
 
             initial_seeds.append(max_distance_seed)
 
-            print("Max Distance Seed : ", max_distance_seed)
             unselected_nodes.remove(max_distance_seed)
             M += 1
 
@@ -198,7 +186,6 @@ def PCA_reduction(D: np.ndarray, epsilon=10e-4) -> np.ndarray:
     X = pca.fit_transform(D)
 
     eigenvalues = pca.explained_variance_
-    print(eigenvalues)
     positive_indices = np.where(eigenvalues > epsilon)[0]
 
     X_transformed = X[:, positive_indices]
@@ -206,16 +193,24 @@ def PCA_reduction(D: np.ndarray, epsilon=10e-4) -> np.ndarray:
     return X_transformed
 
 
-def kmeans_clustering(X: np.ndarray, K: int, initial_seeds: list) -> np.ndarray:
+def kmeans_clustering(X: np.ndarray, K: int, initial_seeds: np.ndarray) -> np.ndarray:
     """
     This function takes a matrix X and the number of clusters K and returns the cluster indices.
     """
+
     kmeans = KMeans(n_clusters=K, random_state=0, init=initial_seeds).fit(X)
-    return kmeans.labels_
+
+    comm_dict = {}
+    for i, label in enumerate(kmeans.labels_):
+        comm_dict[label] = comm_dict.get(label, []) + [i]
+
+    communities = list(comm_dict.values())
+    return communities, kmeans.labels_
 
 
-def calculate_modularity(adj_matrix: np.ndarray, communities: list) -> float:
-    pass
+def calculate_modularity(G: nx.Graph, communities: list) -> float:
+
+    return nx.community.modularity(G, communities)
 
 
 def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int) -> list:
@@ -235,23 +230,25 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int) -> 
 
     Cmax = []
     Qmax = 0
+    Kbest = Kmin
 
     for K in range(Kmin, Kmax + 1):
 
         try:
             initial_seeds = local_expension(G, D, K)
-
-            kmeans = KMeans(n_clusters=K, random_state=0).fit(X)
-            communities = kmeans.labels_
+            communities, labels = kmeans_clustering(
+                D_transformed, K, D_transformed[initial_seeds])
 
             # Calculate the similarity-based modularity Qs
-            Qs = calculate_modularity(communities, S)
+            Qs = calculate_modularity(G, communities)
 
             if Qs > Qmax:
                 Qmax = Qs
                 Cmax = communities
-        except:
+                Kbest = K
+        except Exception as e:
+            print(e)
             print("K : ", K, " is too large")
             break
 
-    return Cmax
+    return Cmax, Qmax, Kbest
