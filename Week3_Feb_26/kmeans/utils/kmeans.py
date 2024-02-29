@@ -209,7 +209,11 @@ def kmeans_clustering(X: np.ndarray, K: int, initial_seeds: np.ndarray) -> np.nd
     This function takes a matrix X and the number of clusters K and returns the cluster indices.
     """
 
-    kmeans = KMeans(n_clusters=K, random_state=0, init=initial_seeds).fit(X)
+    if len(initial_seeds):
+        kmeans = KMeans(n_clusters=K, random_state=0,
+                        init=initial_seeds).fit(X)
+    else:
+        kmeans = KMeans(n_clusters=K, random_state=0, init="k-means++").fit(X)
 
     comm_dict = {}
     for i, label in enumerate(kmeans.labels_):
@@ -247,9 +251,9 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
     trace = []
 
     for K in range(Kmin, Kmax + 1):
-
         try:
             initial_seeds = local_expension(G, D, K)
+
             communities, labels = kmeans_clustering(
                 D_transformed, K, D_transformed[initial_seeds])
 
@@ -268,71 +272,58 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
                 Cmax = communities
                 Kbest = K
                 labelsBest = labels
-        except ValueError:
+        except Exception as e:
+            print(e)
+
             break
 
     return Cmax, Qmax, Kbest, labelsBest, trace
 
 
-def read_community_labels_file_reel(file_path):
+def kmeans_random(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, metric="Mod") -> list:
     """
-    Reads the ground truth files for the reel datasets.
-
-    Args:
-        file_path (str): The path to the file containing the community labels.
-
-    Returns:
-        list: A list of tuples representing the node and its corresponding label.
-              Each tuple contains the node index (int) and the label (int+1).
-    """
-    with open(file_path, 'r') as f:
-        lines = f.readlines()
-        res = []
-        for node, label in enumerate(lines):
-            res.append((int(node), int(label)+1))
-        return res
-
-
-def read_community_labels_file_synth(file_path):
-    """
-    Reads the community.dat files for synthetic datasets.
-
-    Args:
-        file_path (str): The path to the community.dat file.
-
-    Returns:
-        list: A list of tuples containing the node and its corresponding label.
-              Each tuple is in the format (node, label), where node is an integer
-              representing the node index (starting from 0) and label is an integer
-              representing the community label.
+    This function implements the local expansion k-means algorithm.
+    It takes a weighted adjacency matrix A, minimum number of clusters Kmin, and maximum number of clusters Kmax.
+    It returns the community set Cmax.
     """
 
-    res = []
-    with open(file_path, 'r') as f:
-        lines = f.readlines()
-        res = []
-        for line in lines:
-            node, label = line.split()
-            res.append((int(node)-1, int(label)))
+    # Calculate the similarity matrix S using the weighted adjacency matrix A
+    S = similarity_matrix(A)
 
-    return res
+    # Calculate the distance matrix D using S
+    D = distance_matrix(S)
 
+    D_transformed = PCA_reduction(D)
 
-def save_predicted_labels(labels, file_path):
-    """
-    Save the predicted values of communities for each node in a txt file.
+    Cmax = []
+    Qmax = -1
+    Kbest = Kmin
+    labelsBest = []
 
-    Args:
-        labels (list): A list of tuples containing the node and its corresponding label.
-        file_path (str): The path of the file to save the predicted labels.
+    trace = []
 
-    Returns:
-        None
-    """
-    if not file_path.endswith('.txt'):
-        file_path = file_path+'.txt'
+    for K in range(Kmin, Kmax + 1):
 
-    with open(file_path, 'w') as file:
-        for node, label in labels:
-            file.write(f"{node} {label}\n")
-    print(f"Predicted labels saved to {file_path}")
+        try:
+            communities, labels = kmeans_clustering(
+                D_transformed, K, [])
+
+            # Calculate the similarity-based modularity Qs
+
+            if metric == "Mod":
+                Qs = calculate_modularity(G, communities)
+            elif metric == "QSim":
+                Qs = calculate_Q_Sim(A, communities)
+
+            trace += [{"communities": communities, "K": K,
+                       "Modularity": Qs, "labels": labels}]
+
+            if Qs > Qmax:
+                Qmax = Qs
+                Cmax = communities
+                Kbest = K
+                labelsBest = labels
+        except Exception as e:
+            break
+
+    return Cmax, Qmax, Kbest, labelsBest, trace
