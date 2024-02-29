@@ -17,14 +17,44 @@ def similarity_matrix(A: np.ndarray) -> np.ndarray:
     return S
 
 
-def distance_matrix(S: np.ndarray) -> np.ndarray:
+def distance_matrix(similarity_matrix):
     """
-    This function takes a similarity matrix S and returns the distance matrix D.
-    """
-    # Define the Distance Matrix D
+    Converts an unnormalized similarity matrix to a distance matrix.
+    This function first normalizes the similarity scores based on the maximum value found in the matrix.
 
-    D = np.sqrt(np.add.outer(np.diag(S), np.diag(S)) - 2 * S)
-    return D
+    Parameters:
+    similarity_matrix (numpy.ndarray): A square matrix containing unnormalized similarity scores.
+
+    Returns:
+    numpy.ndarray: A square matrix containing distance scores.
+    """
+    # Validate the input matrix is square
+    if similarity_matrix.shape[0] != similarity_matrix.shape[1]:
+        raise ValueError("The similarity matrix must be square.")
+
+    # Normalize similarity scores by the maximum score in the matrix
+    max_similarity = np.max(similarity_matrix)
+    normalized_similarity = similarity_matrix / max_similarity
+
+    # Convert normalized similarity to distance
+    distance_matrix = 1 - normalized_similarity
+
+    # Ensure the diagonal elements are 0 (distance from an element to itself)
+    np.fill_diagonal(distance_matrix, 0)
+
+    return distance_matrix
+
+
+# def distance_matrix(S: np.ndarray) -> np.ndarray:
+#     """
+#     This function takes a similarity matrix S and returns the distance matrix D.
+#     """
+#     # Define the Distance Matrix D
+
+#     D = np.sqrt(np.add.outer(np.diag(S), np.diag(S)) - 2 * S)
+
+
+#     return D
 
 
 def average_weight(dist_matrix: np.ndarray, nodes: list) -> float:
@@ -65,8 +95,6 @@ def find_cliques(G: nx.Graph, adj_matrix: np.ndarray) -> list:
     This function takes a graph G and returns a list of all cliques in the graph.
     """
 
-    range(1, 10)
-
     cliques_generator = nx.find_cliques(G)
 
     res = []
@@ -105,7 +133,8 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
     """
     This function takes a graph G and returns a list of k initial seeds.
     """
-
+    print("============================")
+    print(f"K = {k}")
     adj_matrix = nx.to_numpy_array(G)
 
     initial_seeds = []
@@ -139,7 +168,13 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
         clique_distance_matrix = D[chosen_clique][:, chosen_clique]
         sum_of_distances = np.sum(clique_distance_matrix, axis=1)
 
-        centroid = chosen_clique[np.argmin(sum_of_distances)]
+        # Extract the subgraph
+
+        # centroid = chosen_clique[np.argmin(sum_of_distances)]
+        H = G.subgraph(chosen_clique)
+        closeness_centrality_subgraph = nx.closeness_centrality(H)
+        centroid = max(
+            closeness_centrality_subgraph, key=closeness_centrality_subgraph.get)
 
         fitness_value = fitness_function(adj_matrix, chosen_clique)
 
@@ -148,9 +183,14 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
                 fitness = fitness_function(
                     adj_matrix, chosen_clique + [node])
 
-                if fitness > fitness_value:
+                if fitness >= fitness_value:
                     fitness_value = fitness
                     chosen_clique.append(node)
+
+        print(closeness_centrality_subgraph)
+        print(f"Chosen clique: {chosen_clique}")
+        print(f"Centrality: {closeness_centrality_subgraph}")
+        print(f"Centroid: {centroid}")
 
         initial_seeds.append(centroid)
 
@@ -196,12 +236,10 @@ def PCA_reduction(D: np.ndarray, epsilon=10e-4) -> np.ndarray:
     pca = PCA(n_components=0.99)
     X = pca.fit_transform(D)
 
-    eigenvalues = pca.explained_variance_
-    positive_indices = np.where(eigenvalues > epsilon)[0]
+    # eigenvalues = pca.explained_variance_
+    # positive_indices = np.where(eigenvalues > epsilon)[0]
 
-    X_transformed = X[:, positive_indices]
-
-    return X_transformed
+    return X
 
 
 def kmeans_clustering(X: np.ndarray, K: int, initial_seeds: np.ndarray) -> np.ndarray:
@@ -224,7 +262,8 @@ def kmeans_clustering(X: np.ndarray, K: int, initial_seeds: np.ndarray) -> np.nd
 
 
 def calculate_modularity(G: nx.Graph, communities: list) -> float:
-
+    print("Communities")
+    print(communities)
     return nx.community.modularity(G, communities)
 
 
@@ -253,6 +292,10 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
     for K in range(Kmin, Kmax + 1):
         try:
             initial_seeds = local_expension(G, D, K)
+
+            print(initial_seeds)
+            # communities, labels = kmeans_clustering(
+            #     D_transformed, K, D_transformed[initial_seeds])
 
             communities, labels = kmeans_clustering(
                 D_transformed, K, D_transformed[initial_seeds])
@@ -313,7 +356,7 @@ def kmeans_random(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, metric="Mod"
             if metric == "Mod":
                 Qs = calculate_modularity(G, communities)
             elif metric == "QSim":
-                Qs = calculate_Q_Sim(A, communities)
+                Qs = calculate_Q_Sim(S, communities)
 
             trace += [{"communities": communities, "K": K,
                        "Modularity": Qs, "labels": labels}]

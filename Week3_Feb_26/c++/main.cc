@@ -2,7 +2,6 @@
 #include <vector>
 #include "include/network.hpp"
 
-using namespace std;
 
 
 int main() {
@@ -16,6 +15,9 @@ int main() {
         {1, 0, 0, 0, 0, 0}
     };
 
+
+    // cout << computeSimilarityMatrix(graph) << endl;
+
     vector<vector<int>> allCliques = findAllCliques(graph);
 
     cout << "All maximal cliques in the graph:" << endl;
@@ -25,6 +27,10 @@ int main() {
         }
         cout << endl;
     }
+
+
+    
+
 
     return 0;
 }

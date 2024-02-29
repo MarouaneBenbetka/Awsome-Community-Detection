@@ -161,7 +161,7 @@ def calculate_jaccard_similarity(adj_matrix):
     return similarity_matrix
 
 
-def calculate_Q_Sim(A: np.ndarray, communities: list) -> float:
+def calculate_Q_Sim(S: np.ndarray, communities: list) -> float:
     """
     Calculates the similarity-based modularity of a network given the similarity matrix and a list of communities.
 
@@ -176,19 +176,29 @@ def calculate_Q_Sim(A: np.ndarray, communities: list) -> float:
         None
     """
 
-    S = calculate_jaccard_similarity(A)
-    n = S.shape[0]  # Number of nodes
-    Q_Sim = 0
+    k_i = np.expand_dims(S.sum(axis=1), axis=1)
+    k_j = k_i.T
 
-    TS = np.sum(S)
+    weights_sum = k_i.sum()
+
+    # if the nodes aren't linked we return the worst modularity
+    if weights_sum == 0:
+        return -1
+
+    norm = 1 / weights_sum
+    K = norm * np.matmul(k_i, k_j)  # (ki * kj) / 2m
+    mod_matrix = norm * (S - K)  # ( 1/2m ) *  Aij - (ki * kj) / 2m
+
+    C = np.zeros_like(mod_matrix)
 
     for community in communities:
-        IS = np.sum(S[community][:, community])
-        outside_nodes = [i for i in range(n) if i not in community]
-        DS = 2 * np.sum(S[community][:, outside_nodes])
-        Q_Sim += (IS/TS) - (DS/TS)**2
+        if len(community) <= 1:
+            continue
+        for i, j in combinations(community, 2):
+            C[i, j] = 1.0
+            C[j, i] = 1.0
 
-    return Q_Sim
+    return np.tril(np.multiply(mod_matrix, C), 0).sum()
 
 
 def louvain(G: nx.Graph) -> list:
