@@ -6,6 +6,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from utils.communities_network import calculate_Q_Sim
+from sklearn.preprocessing import StandardScaler
+import math
 
 
 def similarity_matrix(A: np.ndarray) -> np.ndarray:
@@ -17,7 +19,7 @@ def similarity_matrix(A: np.ndarray) -> np.ndarray:
     return S
 
 
-def distance_matrix(similarity_matrix):
+def distance_matrix2(similarity_matrix):
     """
     Converts an unnormalized similarity matrix to a distance matrix.
     This function first normalizes the similarity scores based on the maximum value found in the matrix.
@@ -33,28 +35,46 @@ def distance_matrix(similarity_matrix):
         raise ValueError("The similarity matrix must be square.")
 
     # Normalize similarity scores by the maximum score in the matrix
-    max_similarity = np.max(similarity_matrix)
+    max_similarity = np.max(similarity_matrix, axis=1)
     normalized_similarity = similarity_matrix / max_similarity
+
+    # scaler = StandardScaler()
+    # normalized_similarity = scaler.fit_transform(similarity_matrix)
 
     # Convert normalized similarity to distance
     distance_matrix = 1 - normalized_similarity
 
     # Ensure the diagonal elements are 0 (distance from an element to itself)
-    np.fill_diagonal(distance_matrix, 0)
+    # np.fill_diagonal(distance_matrix, 0)
 
     return distance_matrix
 
 
-# def distance_matrix(S: np.ndarray) -> np.ndarray:
-#     """
-#     This function takes a similarity matrix S and returns the distance matrix D.
-#     """
-#     # Define the Distance Matrix D
+def standard_scale(matrix):
+    # Calculate mean and standard deviation for each column
+    mean_values = np.mean(matrix, axis=0)
+    std_dev_values = np.std(matrix, axis=0)
 
-#     D = np.sqrt(np.add.outer(np.diag(S), np.diag(S)) - 2 * S)
+    # Apply standard scaling
+    scaled_matrix = (matrix - mean_values) / std_dev_values
+
+    return scaled_matrix
 
 
-#     return D
+def distance_matrix(S: np.ndarray) -> np.ndarray:
+    """
+    This function takes a similarity matrix S and returns the distance matrix D.
+    """
+    # Define the Distance Matrix D
+    n = S.shape[0]
+
+    D = np.zeros(S.shape)
+
+    for i in range(n):
+        for j in range(n):
+            D[i, j] = math.sqrt(S[i, i] + S[j, j] - 2*S[i, j])
+
+    return D
 
 
 def average_weight(dist_matrix: np.ndarray, nodes: list) -> float:
@@ -64,9 +84,7 @@ def average_weight(dist_matrix: np.ndarray, nodes: list) -> float:
     """
 
     filtered_dist_matrix = dist_matrix[nodes][:, nodes]
-
     sum_distances = np.sum(filtered_dist_matrix)  # sum of distances
-
     nb_edges = len(nodes) * (len(nodes) - 1)   # cause it's a complete graph
 
     return sum_distances / nb_edges
@@ -133,8 +151,7 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
     """
     This function takes a graph G and returns a list of k initial seeds.
     """
-    print("============================")
-    print(f"K = {k}")
+
     adj_matrix = nx.to_numpy_array(G)
 
     initial_seeds = []
@@ -166,7 +183,7 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
 
         cliques_sorted.pop(chosen_clique_index)
         clique_distance_matrix = D[chosen_clique][:, chosen_clique]
-        sum_of_distances = np.sum(clique_distance_matrix, axis=1)
+        # sum_of_distances = np.sum(clique_distance_matrix, axis=1)
 
         # Extract the subgraph
 
@@ -187,13 +204,7 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
                     fitness_value = fitness
                     chosen_clique.append(node)
 
-        print(closeness_centrality_subgraph)
-        print(f"Chosen clique: {chosen_clique}")
-        print(f"Centrality: {closeness_centrality_subgraph}")
-        print(f"Centroid: {centroid}")
-
         initial_seeds.append(centroid)
-
         unselected_nodes.difference_update(chosen_clique)
 
         new_cliques = []
@@ -258,12 +269,11 @@ def kmeans_clustering(X: np.ndarray, K: int, initial_seeds: np.ndarray) -> np.nd
         comm_dict[label] = comm_dict.get(label, []) + [i]
 
     communities = list(comm_dict.values())
+
     return communities, kmeans.labels_
 
 
 def calculate_modularity(G: nx.Graph, communities: list) -> float:
-    print("Communities")
-    print(communities)
     return nx.community.modularity(G, communities)
 
 
@@ -278,7 +288,7 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
     S = similarity_matrix(A)
 
     # Calculate the distance matrix D using S
-    D = distance_matrix(S)
+    D = distance_matrix2(S)
 
     D_transformed = PCA_reduction(D)
 
@@ -286,19 +296,17 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
     Qmax = -1
     Kbest = Kmin
     labelsBest = []
-
     trace = []
 
     for K in range(Kmin, Kmax + 1):
         try:
             initial_seeds = local_expension(G, D, K)
 
-            print(initial_seeds)
+            communities, labels = kmeans_clustering(
+                D, K, D[initial_seeds])
+
             # communities, labels = kmeans_clustering(
             #     D_transformed, K, D_transformed[initial_seeds])
-
-            communities, labels = kmeans_clustering(
-                D_transformed, K, D_transformed[initial_seeds])
 
             # Calculate the similarity-based modularity Qs
 
@@ -316,7 +324,6 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
                 Kbest = K
                 labelsBest = labels
         except Exception as e:
-            print(e)
 
             break
 
@@ -332,7 +339,6 @@ def kmeans_random(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, metric="Mod"
 
     # Calculate the similarity matrix S using the weighted adjacency matrix A
     S = similarity_matrix(A)
-
     # Calculate the distance matrix D using S
     D = distance_matrix(S)
 
