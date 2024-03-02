@@ -1,3 +1,7 @@
+import numpy as np
+import pandas as pd
+
+
 def read_community_labels_file_reel(file_path):
     """
     Reads the ground truth files for the reel datasets.
