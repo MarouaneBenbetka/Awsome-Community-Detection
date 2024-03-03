@@ -147,27 +147,40 @@ def filter_matrix(matrix: np.ndarray, V: list) -> np.ndarray:
     return new_matrix
 
 
-def local_expension(G: nx.Graph, D: np.ndarray, k=2):
+def local_expension(G: nx.Graph, D: np.ndarray, k=2, alpha=.9, beta=1.1):
     """
     This function takes a graph G and returns a list of k initial seeds.
     """
 
     adj_matrix = nx.to_numpy_array(G)
-
     initial_seeds = []
 
-    cliques = find_cliques(G, adj_matrix)
+    cliques = find_cliques(G, D)
 
     cliques_sorted = sorted(cliques, key=lambda x: x["weight"], reverse=True)
 
     unselected_nodes = set(G.nodes())
-
     skip_nodes = []
 
     M = 0
     while M < k and cliques_sorted:
+
+        print("Iteration ", M)
+        print("M = ", M)
+
+        print("Unselected Nodes")
+        print(unselected_nodes)
+        print("Cliques")
+        print(cliques)
+        print("=========")
+        print("Sorted Cliques")
+        print(cliques_sorted)
+
         max_degree_node = max(unselected_nodes, key=lambda node:  G.degree(
             node) * int(node not in skip_nodes))
+
+        print(
+            f"Max Degree Node {max_degree_node} with degree {G.degree(max_degree_node)}")
 
         chosen_clique = None
         chosen_clique_index = -1
@@ -179,49 +192,91 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
 
         if not chosen_clique:
             skip_nodes.append(max_degree_node)
+            print("SKIP this iteration")
             continue
 
+        print("Chosen Clique")
+        print(chosen_clique)
+
         cliques_sorted.pop(chosen_clique_index)
-        clique_distance_matrix = D[chosen_clique][:, chosen_clique]
-        # sum_of_distances = np.sum(clique_distance_matrix, axis=1)
 
-        # Extract the subgraph
+        condidat_nodes_in_order = sorted(
+            unselected_nodes, key=lambda node: min(D[node, target_node] for target_node in chosen_clique))
 
-        # centroid = chosen_clique[np.argmin(sum_of_distances)]
-        H = G.subgraph(chosen_clique)
-        closeness_centrality_subgraph = nx.closeness_centrality(H)
-        centroid = max(
-            closeness_centrality_subgraph, key=closeness_centrality_subgraph.get)
+        print("Sorting Nodes according to distance to the chosen clique")
+        print(*[(node, min(D[node, target_node] for target_node in chosen_clique))
+              for node in condidat_nodes_in_order])
 
         fitness_value = fitness_function(adj_matrix, chosen_clique)
 
-        for node in unselected_nodes:
+        print("Selecting nodes to enter our community")
+        print("============================")
+        print("Initial Fitness Value", fitness_value)
+
+        fitness_trace = []
+
+        for node in condidat_nodes_in_order:
             if node not in chosen_clique:
+                print("Trying Node ", node)
+
                 fitness = fitness_function(
-                    adj_matrix, chosen_clique + [node])
+                    adj_matrix, chosen_clique + [node], alpha, beta)
+                print("Fitness Value After adding it ", fitness)
 
                 if fitness >= fitness_value:
+                    fitness_trace.append((node, fitness, fitness_value, True))
+                    print("Fitness >= Old Fitness node added to the clique")
+                    print("NEW Fitness value", fitness)
+                    print("New Graph")
+
                     fitness_value = fitness
                     chosen_clique.append(node)
+                    print(chosen_clique)
+                else:
+                    fitness_trace.append((node, fitness, fitness_value, False))
+                    print("Node not accepted")
+
+        print("fitness_trace : ")
+        print(fitness_trace)
+        print("===========================")
+
+        print("Selecting centroid")
+        print("============================")
+        H = G.subgraph(chosen_clique)
+        closeness_centrality_subgraph = nx.closeness_centrality(H)
+
+        print("Select the node with the highest closeness centrality as the centroid of the subgraph.")
+        print("Centralite : ")
+        print(closeness_centrality_subgraph)
+        centroid = max(
+            closeness_centrality_subgraph, key=closeness_centrality_subgraph.get)
+        print(f"Centroid {centroid} chosen")
+        print("============================")
 
         initial_seeds.append(centroid)
+        print("Initial Seeds")
+        print(initial_seeds)
         unselected_nodes.difference_update(chosen_clique)
+        print("unselected_nodes")
+        print(unselected_nodes)
 
         new_cliques = []
-        for cliques in cliques_sorted:
-            cliques["nodes"] = [node for node in cliques["nodes"]
-                                if node in unselected_nodes]
-            cliques["weight"] = average_weight(adj_matrix, cliques["nodes"])
+        for clique in cliques_sorted:
+            clique["nodes"] = [node for node in clique["nodes"]
+                               if node in unselected_nodes]
+            clique["weight"] = average_weight(adj_matrix, clique["nodes"])
 
-            if len(cliques["nodes"]) > 2:
-                new_cliques.append(cliques)
+            if len(clique["nodes"]) > 2:
+                new_cliques.append(clique)
 
         cliques_sorted = sorted(
             new_cliques, key=lambda x: x["weight"], reverse=True)
 
         M += 1
+        print("Next Iteration")
 
     if M < k:
+        print("Ooops M < K")
 
         for _ in range(k-M):
 
@@ -244,10 +299,9 @@ def PCA_reduction(D: np.ndarray, epsilon=10e-4) -> np.ndarray:
     This function takes a distance matrix D and returns the reduced matrix using PCA.
     """
 
-    pca = PCA(n_components=0.99)
+    pca = PCA(n_components=.90)
     X = pca.fit_transform(D)
 
-    # eigenvalues = pca.explained_variance_
     # positive_indices = np.where(eigenvalues > epsilon)[0]
 
     return X
@@ -277,7 +331,7 @@ def calculate_modularity(G: nx.Graph, communities: list) -> float:
     return nx.community.modularity(G, communities)
 
 
-def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, metric="Mod") -> list:
+def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, metric="Mod", alpha=.9, beta=1.1) -> list:
     """
     This function implements the local expansion k-means algorithm.
     It takes a weighted adjacency matrix A, minimum number of clusters Kmin, and maximum number of clusters Kmax.
@@ -300,13 +354,9 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
 
     for K in range(Kmin, Kmax + 1):
         try:
-            initial_seeds = local_expension(G, D, K)
-
+            initial_seeds = local_expension(G, D, K, alpha, beta)
             communities, labels = kmeans_clustering(
-                D, K, D[initial_seeds])
-
-            # communities, labels = kmeans_clustering(
-            #     D_transformed, K, D_transformed[initial_seeds])
+                D_transformed, K, D_transformed[initial_seeds])
 
             # Calculate the similarity-based modularity Qs
 
@@ -324,7 +374,7 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
                 Kbest = K
                 labelsBest = labels
         except Exception as e:
-
+            print(e)
             break
 
     return Cmax, Qmax, Kbest, labelsBest, trace
