@@ -165,22 +165,8 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2, alpha=.9, beta=1.1):
     M = 0
     while M < k and cliques_sorted:
 
-        print("Iteration ", M)
-        print("M = ", M)
-
-        print("Unselected Nodes")
-        print(unselected_nodes)
-        print("Cliques")
-        print(cliques)
-        print("=========")
-        print("Sorted Cliques")
-        print(cliques_sorted)
-
         max_degree_node = max(unselected_nodes, key=lambda node:  G.degree(
             node) * int(node not in skip_nodes))
-
-        print(
-            f"Max Degree Node {max_degree_node} with degree {G.degree(max_degree_node)}")
 
         chosen_clique = None
         chosen_clique_index = -1
@@ -192,73 +178,32 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2, alpha=.9, beta=1.1):
 
         if not chosen_clique:
             skip_nodes.append(max_degree_node)
-            print("SKIP this iteration")
             continue
-
-        print("Chosen Clique")
-        print(chosen_clique)
 
         cliques_sorted.pop(chosen_clique_index)
 
         condidat_nodes_in_order = sorted(
             unselected_nodes, key=lambda node: min(D[node, target_node] for target_node in chosen_clique))
 
-        print("Sorting Nodes according to distance to the chosen clique")
-        print(*[(node, min(D[node, target_node] for target_node in chosen_clique))
-              for node in condidat_nodes_in_order])
-
         fitness_value = fitness_function(adj_matrix, chosen_clique)
-
-        print("Selecting nodes to enter our community")
-        print("============================")
-        print("Initial Fitness Value", fitness_value)
-
-        fitness_trace = []
 
         for node in condidat_nodes_in_order:
             if node not in chosen_clique:
-                print("Trying Node ", node)
-
                 fitness = fitness_function(
                     adj_matrix, chosen_clique + [node], alpha, beta)
-                print("Fitness Value After adding it ", fitness)
 
                 if fitness >= fitness_value:
-                    fitness_trace.append((node, fitness, fitness_value, True))
-                    print("Fitness >= Old Fitness node added to the clique")
-                    print("NEW Fitness value", fitness)
-                    print("New Graph")
-
                     fitness_value = fitness
                     chosen_clique.append(node)
-                    print(chosen_clique)
-                else:
-                    fitness_trace.append((node, fitness, fitness_value, False))
-                    print("Node not accepted")
 
-        print("fitness_trace : ")
-        print(fitness_trace)
-        print("===========================")
-
-        print("Selecting centroid")
-        print("============================")
         H = G.subgraph(chosen_clique)
         closeness_centrality_subgraph = nx.closeness_centrality(H)
 
-        print("Select the node with the highest closeness centrality as the centroid of the subgraph.")
-        print("Centralite : ")
-        print(closeness_centrality_subgraph)
         centroid = max(
             closeness_centrality_subgraph, key=closeness_centrality_subgraph.get)
-        print(f"Centroid {centroid} chosen")
-        print("============================")
 
         initial_seeds.append(centroid)
-        print("Initial Seeds")
-        print(initial_seeds)
         unselected_nodes.difference_update(chosen_clique)
-        print("unselected_nodes")
-        print(unselected_nodes)
 
         new_cliques = []
         for clique in cliques_sorted:
@@ -273,11 +218,8 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2, alpha=.9, beta=1.1):
             new_cliques, key=lambda x: x["weight"], reverse=True)
 
         M += 1
-        print("Next Iteration")
 
     if M < k:
-        print("Ooops M < K")
-
         for _ in range(k-M):
 
             if not unselected_nodes:
