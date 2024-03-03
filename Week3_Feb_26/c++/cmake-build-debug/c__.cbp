@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="c__"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\..\..\ProgramData\;CMake Files\..\..\..\..\..\..\..\..\..\ProgramData\chocolatey\;CMake Files\..\..\..\..\..\..\..\..\..\ProgramData\chocolatey\lib\;CMake Files\..\..\..\..\..\..\..\..\..\ProgramData\chocolatey\lib\eigen\;CMake Files\..\..\..\..\..\..\..\..\..\ProgramData\chocolatey\lib\eigen\share\;CMake Files\..\..\..\..\..\..\..\..\..\ProgramData\chocolatey\lib\eigen\share\cmake\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="c__">
+				<Option output="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/c__.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/include"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/backward"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/include"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/include-fixed"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/../../../../x86_64-w64-mingw32/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 c__"/>
+					<CompileFile command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="c__/fast">
+				<Option output="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/c__.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/include"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/backward"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/include"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/include-fixed"/>
+					<Add directory="C:/MinGW/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/8.1.0/../../../../x86_64-w64-mingw32/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 c__/fast"/>
+					<CompileFile command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/MinGW/mingw64/bin/mingw32-make.exe -f &quot;C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/include/kmeans.hpp">
+			<Option target="c__"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/include/network.hpp">
+			<Option target="c__"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/include/pca.hpp">
+			<Option target="c__"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/include/utils.h">
+			<Option target="c__"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/main.cc">
+			<Option target="c__"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/src/kmeans.cpp">
+			<Option target="c__"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/src/network.cpp">
+			<Option target="c__"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/src/pca.cpp">
+			<Option target="c__"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/src/utils.cpp">
+			<Option target="c__"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/../../../../../../../../../ProgramData/chocolatey/lib/eigen/share/cmake/Eigen3Config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\ProgramData\chocolatey\lib\eigen\share\cmake\"/>
+		</Unit>
+		<Unit filename="C:/Users/ramzi/OneDrive/Bureau/AcademicResources/S2/PRJ/Week3_Feb_26/c++/../../../../../../../../../ProgramData/chocolatey/lib/eigen/share/cmake/Eigen3ConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\ProgramData\chocolatey\lib\eigen\share\cmake\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
