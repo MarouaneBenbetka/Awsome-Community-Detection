@@ -227,10 +227,9 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2, alpha=.9, beta=1.1):
 
             max_distance_seed = max(
                 unselected_nodes, key=lambda node: np.sum(D[initial_seeds][:, node]))
-
             initial_seeds.append(max_distance_seed)
-
             unselected_nodes.remove(max_distance_seed)
+
             M += 1
 
     return initial_seeds
@@ -294,6 +293,9 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
     labelsBest = []
     trace = []
 
+    Mod = -1
+    Modsim = -1
+
     for K in range(Kmin, Kmax + 1):
         try:
             initial_seeds = local_expension(G, D, K, alpha, beta)
@@ -304,11 +306,15 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
 
             if metric == "Mod":
                 Qs = calculate_modularity(G, communities)
+                Mod = Qs
+                Modsim = calculate_Q_Sim(A, communities)
             elif metric == "QSim":
                 Qs = calculate_Q_Sim(A, communities)
+                Mod = calculate_modularity(G, communities)
+                Modsim = Qs
 
             trace += [{"communities": communities, "K": K,
-                       "Modularity": Qs, "labels": labels}]
+                       "Modularity": calculate_modularity(G, communities), "Similarity-Based Modularity": Modsim, "labels": Mod}]
 
             if Qs > Qmax:
                 Qmax = Qs
