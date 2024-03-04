@@ -51,6 +51,16 @@ def distance_matrix2(similarity_matrix):
 
 
 def standard_scale(matrix):
+    """
+    Standardizes the given matrix by applying standard scaling.
+
+    Parameters:
+    matrix (numpy.ndarray): The input matrix to be standardized.
+
+    Returns:
+    numpy.ndarray: The standardized matrix.
+
+    """
     # Calculate mean and standard deviation for each column
     mean_values = np.mean(matrix, axis=0)
     std_dev_values = np.std(matrix, axis=0)
@@ -155,38 +165,47 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2, alpha=.9, beta=1.1):
     adj_matrix = nx.to_numpy_array(G)
     initial_seeds = []
 
+    # find all complete subgraphs of size 3 or more in the graph
     cliques = find_cliques(G, D)
 
+    # sort the cliques by their weight
     cliques_sorted = sorted(cliques, key=lambda x: x["weight"], reverse=True)
 
+    # get the unselected nodes
     unselected_nodes = set(G.nodes())
     skip_nodes = []
 
     M = 0
     while M < k and cliques_sorted:
 
+        # get the node with the maximum degree
         max_degree_node = max(unselected_nodes, key=lambda node:  G.degree(
             node) * int(node not in skip_nodes))
 
         chosen_clique = None
         chosen_clique_index = -1
+        # get the clique that contains the node with the maximum degree
         for i, clique in enumerate(cliques_sorted):
             if max_degree_node in clique["nodes"]:
                 chosen_clique_index = i
                 chosen_clique = clique["nodes"]
                 break
 
+        # if the node with the maximum degree is not in any clique we skip it in next iteration
         if not chosen_clique:
             skip_nodes.append(max_degree_node)
             continue
 
         cliques_sorted.pop(chosen_clique_index)
 
+        # sort the nodes in the clique by their distance to the other nodes in the clique
         condidat_nodes_in_order = sorted(
             unselected_nodes, key=lambda node: min(D[node, target_node] for target_node in chosen_clique))
 
+        # get the initial fitness value of the chosen clique
         fitness_value = fitness_function(adj_matrix, chosen_clique)
 
+        # add the nodes that maximizes the fitness function to the chosen clique
         for node in condidat_nodes_in_order:
             if node not in chosen_clique:
                 fitness = fitness_function(
@@ -196,15 +215,23 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2, alpha=.9, beta=1.1):
                     fitness_value = fitness
                     chosen_clique.append(node)
 
+        # get the subgraph of the chosen clique
         H = G.subgraph(chosen_clique)
+
+        # get the closeness centrality of the subgraph
         closeness_centrality_subgraph = nx.closeness_centrality(H)
 
+        # get the node with the maximum closeness centrality as a seed
         centroid = max(
             closeness_centrality_subgraph, key=closeness_centrality_subgraph.get)
 
+        # add the centroid to the initial seeds
         initial_seeds.append(centroid)
+
+        # remove the nodes in the chosen clique from the unselected nodes
         unselected_nodes.difference_update(chosen_clique)
 
+        # remove the treeted nodes from the cliques list
         new_cliques = []
         for clique in cliques_sorted:
             clique["nodes"] = [node for node in clique["nodes"]
@@ -214,11 +241,13 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2, alpha=.9, beta=1.1):
             if len(clique["nodes"]) > 2:
                 new_cliques.append(clique)
 
+        # sort the new cliques according to their weight
         cliques_sorted = sorted(
             new_cliques, key=lambda x: x["weight"], reverse=True)
 
         M += 1
 
+    # if the number of initial seeds is less than k we add the nodes with the maximum distance to the initial seeds
     if M < k:
         for _ in range(k-M):
 
@@ -296,14 +325,18 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
     Mod = -1
     Modsim = -1
 
+    # iterate from Kmin to Kmax to find the best number of clusters accoriding to the choosed matrix either Mod or QSim
     for K in range(Kmin, Kmax + 1):
         try:
+
+            # get the initial seeds using the local expansion algorithm
             initial_seeds = local_expension(G, D, K, alpha, beta)
+
+            # apply the kmeans clustering algorithm
             communities, labels = kmeans_clustering(
                 D_transformed, K, D_transformed[initial_seeds])
 
-            # Calculate the similarity-based modularity Qs
-
+            # Calculate the similarity-based modularity or Modularity according to the choosed metric
             if metric == "Mod":
                 Qs = calculate_modularity(G, communities)
                 Mod = Qs
@@ -313,9 +346,11 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
                 Mod = calculate_modularity(G, communities)
                 Modsim = Qs
 
+            # just for printing the trace
             trace += [{"communities": communities, "K": K,
                        "Modularity": calculate_modularity(G, communities), "Similarity-Based Modularity": Modsim, "labels": Mod}]
 
+            # choose the best number of clusters according to the choosed metric K
             if Qs > Qmax:
                 Qmax = Qs
                 Cmax = communities
