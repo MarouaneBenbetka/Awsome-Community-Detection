@@ -1,4 +1,4 @@
-    #include <iostream>
+#include <iostream>
 #include <vector>
 #include <eigen3/Eigen/Dense>
 #include <numeric>
@@ -17,32 +17,41 @@ using namespace Eigen;
 
 
 
-/**
- * Checks if a vertex is a neighbor of all vertices in a given clique.
- *
- * @param v The vertex to check.
- * @param clique The clique to check against.
- * @param graph The graph representing the connections between vertices.
- * @return True if the vertex is a neighbor of all vertices in the clique, false otherwise.
- */
-
-bool isNeighborOfAll(int v, const vector<int>& clique, const vector<vector<int>>& graph);
-
-
-void findCliquesRecursive(vector<int>& currentClique, vector<vector<int>>& allCliques,
-                          vector<int>& potentialNodes, vector<int>& nonCandidates,
-                          const vector<vector<int>>& graph); 
-
-
-vector<vector<int>> findAllCliques(const vector<vector<int>>& graph);
 
 MatrixXd computeSimilarityMatrix(const MatrixXd& A) ;
 
-// MatrixXd computeDistanceMatrix(const MatrixXd& S) ;
+MatrixXd computeDistanceMatrix(const MatrixXd& S) ;
 
-// double averageWeight(const MatrixXd& distMatrix, const vector<int>& nodes) ;
+/**
+ * Calculates the entropy of a given list of labels.
+ *
+ * @param labels The list of labels.
+ * @return The entropy value of the list of labels.
+ */
+double calculateEntropy(const std::vector<int>& labels) ;
 
-// double fitnessFunction(const vector<vector<double>>& adjMatrix, const vector<int>& nodes, double alpha = 0.9, double beta = 1.1)
 
+
+/**
+ * Calculates the mutual information of two given lists of labels.
+ *
+ * @param labels1 The first list of labels.
+ * @param labels2 The second list of labels.
+ * @return The mutual information value of the two lists of labels.
+ */
+double calculateMutualInformation(const std::vector<int>& labels1, const std::vector<int>& labels2) ;
+
+
+/**
+ * Calculates the normalized mutual information of two given lists of labels.
+ *
+ * @param labels1 The first list of labels.
+ * @param labels2 The second list of labels.
+ * @return The normalized mutual information value of the two lists of labels.
+ */
+double calculateNMI(const std::vector<int>& labels1, const std::vector<int>& labels2) ;
+
+
+double modularity(const Eigen::MatrixXd& adjMatrix, const std::vector<std::vector<int>>& communities) ;
 
 #endif

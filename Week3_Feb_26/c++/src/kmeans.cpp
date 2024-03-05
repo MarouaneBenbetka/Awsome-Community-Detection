@@ -2,10 +2,6 @@
 #include <iostream>
 #include <vector>
 #include "../include/kmeans.hpp"
-#include "../include/network.hpp"
-#include "../include/utils.h"
-#include "pca.hpp"
-
 
 using namespace Eigen;
 using namespace std;
@@ -69,53 +65,4 @@ VectorXd  kMeans(const MatrixXd& data, MatrixXd& initialCentroids, int maxIterat
     }
 
     return labels;
-}
-
-
-
-// TODO: there is still some work to be done on this function
-auto localExpansionKMeans(MatrixXd& matrix, vector<vector<int>>& A, vector<vector<int>>& cliques,
-                          int kMin, int kMax, const int metric) {
-    // compute the similarity matrix
-    MatrixXd similarityMatrix = computeSimilarityMatrix(matrix);
-    MatrixXd distanceMatrix = computeDistanceMatrix(similarityMatrix);
-    MatrixXd mTransformed = PCA(distanceMatrix);
-
-    vector<vector<int>> Cmax;
-    double Qmax = -1;
-    int kBest = kMin;
-
-    for (int k = kMin; k < kMax + 1; k++) {
-        vector<int> initialSeeds = localExpansion(cliques, matrix, A, k);
-
-        // still do not understand how these become represented with MatrixXd
-        MatrixXd seeds;
-        int iterations = 199;
-        // cluster the nodes
-        // recover the vector of labels
-        MatrixXd labels = kMeans(matrix, seeds, iterations);
-
-        // extract the communities and the labels
-        vector<vector<int>> communities;
-
-        // the quality measure
-        double Qs = 0;
-
-        if (metric == MOD) {
-            Qs = 0; // computeModularity(G, communities)
-        } else if (metric == QS) {
-            Qs = 0; // compute Q SIM(A, communities)
-        }
-
-        if (Qs > Qmax) {
-            Qmax = Qs;
-            Cmax = communities;
-        }
-
-        // there is still something to fix here
-
-        return make_tuple()
-
-    }
-
 }

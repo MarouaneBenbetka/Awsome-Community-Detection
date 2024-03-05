@@ -54,5 +54,3 @@ MatrixXd PCA(const MatrixXd& data , const int variance ) {
     return transformed;
 }
 
-
-

@@ -103,7 +103,7 @@ def communities_to_labels(G, communities: list, original_nodes) -> list:
         for node in community:
             res.append((original_nodes[node], index+1))
 
-    return sorted(res)
+    return sorted(res, key=lambda x: x[0])
 
 
 def calc_nmi(true_labels: list, pred_labels: list) -> float:

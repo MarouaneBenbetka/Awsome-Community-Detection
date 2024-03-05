@@ -1,58 +1,93 @@
-#include <iostream>
+#include <eigen3/Eigen/Dense>
 #include <vector>
+#include <iostream>
+#include <numeric>
+#include <utility>
+#include <random> 
+#include <algorithm>
+#include <string>
+#include <map>
+#include <fstream>
+#include <sstream>
+#include <chrono>
 #include "include/network.hpp"
+#include "include/kmeans.hpp"
 #include "include/pca.hpp"
-#include "include/utils.h"
+#include "include/utils.hpp"
+#include "include/local_expansion.hpp"
+
+
+
+
+
+
+
 
 
 int main() {
-    // Example graph represented as an adjacency matrix
-    vector<vector<int>> graph = {
-            {0, 2, 1, 1, 1, 1}, // Adjacency matrix representation
-            {2, 0, 1, 1, 1, 0}, // 1 represents an edge between vertices
-            {1, 1, 0, 1, 0, 0}, // 0 represents no edge
-            {1, 1, 1, 0, 1, 0},
-            {1, 1, 0, 1, 0, 0},
-            {1, 0, 0, 0, 0, 0}
-    };
+    std::string filename_reel = "../data/reel/karate/karate.gml";
+    Eigen::MatrixXd adjMatrix = readGMLToAdjacencyMatrix(filename_reel);
 
+    std::cout << "-------------------------------------" << std::endl;
+    std::cout << "Reel :" << std::endl;
+    std::cout << "Starting Kmeans with local Expansion Algorithm On Karate dataset :" << std::endl;
+    // start time
+    auto start_reel = std::chrono::high_resolution_clock::now();
+    
 
+    
 
-    // cout << computeSimilarityMatrix(graph) << endl;
-    MatrixXd graphMatrix = convertToEigenMatrix(graph);
-    vector<vector<int>> allCliques = findAllCliques(graph);
+    Eigen::MatrixXd  similarity = computeSimilarityMatrix(adjMatrix);
+    Eigen::MatrixXd  distanceMatrix = computeDistanceMatrix(similarity);
 
-    cout << "All maximal cliques in the graph:" << endl;
-    for (const auto &clique: allCliques) {
-        for (int vertex: clique) {
-            cout << vertex << " ";
+    Eigen::MatrixXd  distance_reduced = PCA(distanceMatrix , .98);
+
+    std::vector<std::vector<int>> bestCommunities;
+    double bestModularity = -1.0;
+
+    for (int k = 2; k <= 10; k++) {
+        try {
+            std::vector<int> initial_seeds = localExpansion(adjMatrix, distanceMatrix, k, 0.9, 1.1);
+            Eigen::MatrixXd initial_seeds_vectors = extractRows(distance_reduced, initial_seeds);
+            VectorXd labels = kMeans(distance_reduced, initial_seeds_vectors);
+            auto communities = labelsToCommunities(labels);
+            double qsim = modularity(adjMatrix, communities);
+
+            if (qsim > bestModularity) {
+                bestModularity = qsim;
+                bestCommunities = communities;
+            }
+        } catch (...) {
+            break;
         }
-        cout << endl;
     }
 
-    // in the first place, we have the ADJACENCY MATRIX
-    // we compute the S matrix by S = M * tr(M)
-    MatrixXd similarityMatrix = computeSimilarityMatrix(graphMatrix);
+    auto communities_reel = bestCommunities;
 
-    // M is the adjacency matrix
+    auto end_reel = std::chrono::high_resolution_clock::now();
 
-    // Based on S, we can get the matrix D
-    MatrixXd distanceMatrix = computeDistanceMatrix(similarityMatrix);
+    // Calculating total time taken by the program.
+    std::chrono::duration<double, std::milli> duration_reel = end_reel - start_reel;
 
-    // We apply a PCA On the D matrix to get the matrix of representation of nodes
-    // in a space of p dimensions (p < N)
-    MatrixXd transformed = PCA(distanceMatrix);
+    std::vector<int> labels_reel_predicted = communitiesToLabels(communities_reel);
 
-    // select the centroids as an initialization for the kmeans algorithm
-    // 1st: get all the cliques in the graph
+    std::string trueLabelsFilename_reel = "../data/reel/karate/groundTruth.txt";
+    std::vector<int> trueLabels = readTrueLabels(trueLabelsFilename_reel);
+
+    double nmi_reel = calculateNMI(labels_reel_predicted, trueLabels);
+
+    // Print NMI
+    std::cout << "NMI: " << nmi_reel << std::endl;
+    
+    // Print the duration time
+    std::cout << "Kmeans with local expansion Execution Time: " << duration_reel.count() << " ms" << std::endl;
+
+    // Print the number of communities generated
+    std::cout << "Number of Communities Generated: " << communities_reel.size() << std::endl;
 
 
-    // there is some serious work to be done here
-
-    // apply the K-means algorithm as it is
-
-
-
-
+  
     return 0;
 }
+
+

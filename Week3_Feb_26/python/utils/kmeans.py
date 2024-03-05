@@ -51,6 +51,16 @@ def distance_matrix2(similarity_matrix):
 
 
 def standard_scale(matrix):
+    """
+    Standardizes the given matrix by applying standard scaling.
+
+    Parameters:
+    matrix (numpy.ndarray): The input matrix to be standardized.
+
+    Returns:
+    numpy.ndarray: The standardized matrix.
+
+    """
     # Calculate mean and standard deviation for each column
     mean_values = np.mean(matrix, axis=0)
     std_dev_values = np.std(matrix, axis=0)
@@ -147,82 +157,98 @@ def filter_matrix(matrix: np.ndarray, V: list) -> np.ndarray:
     return new_matrix
 
 
-def local_expension(G: nx.Graph, D: np.ndarray, k=2):
+def local_expension(G: nx.Graph, D: np.ndarray, k=2, alpha=.9, beta=1.1):
     """
     This function takes a graph G and returns a list of k initial seeds.
     """
 
     adj_matrix = nx.to_numpy_array(G)
-
     initial_seeds = []
 
-    cliques = find_cliques(G, adj_matrix)
+    # find all complete subgraphs of size 3 or more in the graph
+    cliques = find_cliques(G, D)
 
+    # sort the cliques by their weight
     cliques_sorted = sorted(cliques, key=lambda x: x["weight"], reverse=True)
 
+    # get the unselected nodes
     unselected_nodes = set(G.nodes())
-
     skip_nodes = []
 
     M = 0
     while M < k and cliques_sorted:
+
+        # get the node with the maximum degree
         max_degree_node = max(unselected_nodes, key=lambda node:  G.degree(
             node) * int(node not in skip_nodes))
 
         chosen_clique = None
         chosen_clique_index = -1
+        # get the clique that contains the node with the maximum degree
         for i, clique in enumerate(cliques_sorted):
             if max_degree_node in clique["nodes"]:
                 chosen_clique_index = i
                 chosen_clique = clique["nodes"]
                 break
 
+        # if the node with the maximum degree is not in any clique we skip it in next iteration
         if not chosen_clique:
             skip_nodes.append(max_degree_node)
             continue
 
         cliques_sorted.pop(chosen_clique_index)
-        clique_distance_matrix = D[chosen_clique][:, chosen_clique]
-        # sum_of_distances = np.sum(clique_distance_matrix, axis=1)
 
-        # Extract the subgraph
+        # sort the nodes in the clique by their distance to the other nodes in the clique
+        condidat_nodes_in_order = sorted(
+            unselected_nodes, key=lambda node: min(D[node, target_node] for target_node in chosen_clique))
 
-        # centroid = chosen_clique[np.argmin(sum_of_distances)]
-        H = G.subgraph(chosen_clique)
-        closeness_centrality_subgraph = nx.closeness_centrality(H)
-        centroid = max(
-            closeness_centrality_subgraph, key=closeness_centrality_subgraph.get)
-
+        # get the initial fitness value of the chosen clique
         fitness_value = fitness_function(adj_matrix, chosen_clique)
 
-        for node in unselected_nodes:
+        # add the nodes that maximizes the fitness function to the chosen clique
+        for node in condidat_nodes_in_order:
             if node not in chosen_clique:
                 fitness = fitness_function(
-                    adj_matrix, chosen_clique + [node])
+                    adj_matrix, chosen_clique + [node], alpha, beta)
 
                 if fitness >= fitness_value:
                     fitness_value = fitness
                     chosen_clique.append(node)
 
+        # get the subgraph of the chosen clique
+        H = G.subgraph(chosen_clique)
+
+        # get the closeness centrality of the subgraph
+        closeness_centrality_subgraph = nx.closeness_centrality(H)
+
+        # get the node with the maximum closeness centrality as a seed
+        centroid = max(
+            closeness_centrality_subgraph, key=closeness_centrality_subgraph.get)
+
+        # add the centroid to the initial seeds
         initial_seeds.append(centroid)
+
+        # remove the nodes in the chosen clique from the unselected nodes
         unselected_nodes.difference_update(chosen_clique)
 
+        # remove the treeted nodes from the cliques list
         new_cliques = []
-        for cliques in cliques_sorted:
-            cliques["nodes"] = [node for node in cliques["nodes"]
-                                if node in unselected_nodes]
-            cliques["weight"] = average_weight(adj_matrix, cliques["nodes"])
+        for clique in cliques_sorted:
+            clique["nodes"] = [node for node in clique["nodes"]
+                               if node in unselected_nodes]
+            clique["weight"] = average_weight(adj_matrix, clique["nodes"])
 
-            if len(cliques["nodes"]) > 2:
-                new_cliques.append(cliques)
+            if len(clique["nodes"]) > 2:
+                new_cliques.append(clique)
 
+        # sort the new cliques according to their weight
         cliques_sorted = sorted(
             new_cliques, key=lambda x: x["weight"], reverse=True)
 
         M += 1
 
+    # if the number of initial seeds is less than k we add the nodes with the maximum distance to the initial seeds
     if M < k:
-
         for _ in range(k-M):
 
             if not unselected_nodes:
@@ -230,10 +256,9 @@ def local_expension(G: nx.Graph, D: np.ndarray, k=2):
 
             max_distance_seed = max(
                 unselected_nodes, key=lambda node: np.sum(D[initial_seeds][:, node]))
-
             initial_seeds.append(max_distance_seed)
-
             unselected_nodes.remove(max_distance_seed)
+
             M += 1
 
     return initial_seeds
@@ -244,10 +269,9 @@ def PCA_reduction(D: np.ndarray, epsilon=10e-4) -> np.ndarray:
     This function takes a distance matrix D and returns the reduced matrix using PCA.
     """
 
-    pca = PCA(n_components=0.99)
+    pca = PCA(n_components=.90)
     X = pca.fit_transform(D)
 
-    # eigenvalues = pca.explained_variance_
     # positive_indices = np.where(eigenvalues > epsilon)[0]
 
     return X
@@ -277,7 +301,7 @@ def calculate_modularity(G: nx.Graph, communities: list) -> float:
     return nx.community.modularity(G, communities)
 
 
-def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, metric="Mod") -> list:
+def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, metric="Mod", alpha=.9, beta=1.1) -> list:
     """
     This function implements the local expansion k-means algorithm.
     It takes a weighted adjacency matrix A, minimum number of clusters Kmin, and maximum number of clusters Kmax.
@@ -298,33 +322,42 @@ def local_expansion_kmeans(G: nx.Graph, A: np.ndarray, Kmin: int, Kmax: int, met
     labelsBest = []
     trace = []
 
+    Mod = -1
+    Modsim = -1
+
+    # iterate from Kmin to Kmax to find the best number of clusters accoriding to the choosed matrix either Mod or QSim
     for K in range(Kmin, Kmax + 1):
         try:
-            initial_seeds = local_expension(G, D, K)
 
+            # get the initial seeds using the local expansion algorithm
+            initial_seeds = local_expension(G, D, K, alpha, beta)
+
+            # apply the kmeans clustering algorithm
             communities, labels = kmeans_clustering(
-                D, K, D[initial_seeds])
+                D_transformed, K, D_transformed[initial_seeds])
 
-            # communities, labels = kmeans_clustering(
-            #     D_transformed, K, D_transformed[initial_seeds])
-
-            # Calculate the similarity-based modularity Qs
-
+            # Calculate the similarity-based modularity or Modularity according to the choosed metric
             if metric == "Mod":
                 Qs = calculate_modularity(G, communities)
+                Mod = Qs
+                Modsim = calculate_Q_Sim(A, communities)
             elif metric == "QSim":
                 Qs = calculate_Q_Sim(A, communities)
+                Mod = calculate_modularity(G, communities)
+                Modsim = Qs
 
+            # just for printing the trace
             trace += [{"communities": communities, "K": K,
-                       "Modularity": Qs, "labels": labels}]
+                       "Modularity": calculate_modularity(G, communities), "Similarity-Based Modularity": Modsim, "labels": Mod}]
 
+            # choose the best number of clusters according to the choosed metric K
             if Qs > Qmax:
                 Qmax = Qs
                 Cmax = communities
                 Kbest = K
                 labelsBest = labels
         except Exception as e:
-
+            print(e)
             break
 
     return Cmax, Qmax, Kbest, labelsBest, trace
