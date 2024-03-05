@@ -25,7 +25,7 @@
 
 
 int main() {
-    std::string filename_reel = "../kmeans/data/reel/karate/karate.gml";
+    std::string filename_reel = "../data/reel/karate/karate.gml";
     Eigen::MatrixXd adjMatrix = readGMLToAdjacencyMatrix(filename_reel);
 
     std::cout << "-------------------------------------" << std::endl;
@@ -71,7 +71,7 @@ int main() {
 
     std::vector<int> labels_reel_predicted = communitiesToLabels(communities_reel);
 
-    std::string trueLabelsFilename_reel = "../kmeans/data/reel/karate/groundTruth.txt";
+    std::string trueLabelsFilename_reel = "../data/reel/karate/groundTruth.txt";
     std::vector<int> trueLabels = readTrueLabels(trueLabelsFilename_reel);
 
     double nmi_reel = calculateNMI(labels_reel_predicted, trueLabels);
