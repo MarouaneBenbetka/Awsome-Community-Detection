@@ -1,0 +1,76 @@
+import torch
+import math
+from torch.distributions.dirichlet import Dirichlet
+from torch.distributions.normal import Normal
+
+
+class InfiniteGMMHyperbolic:
+    def __init__(self, alpha, max_clusters=10, dim=2):
+        self.alpha = alpha  # DP concentration parameter
+        self.max_clusters = max_clusters  # Soft limit on number of clusters
+        self.dim = dim  # Dimension of the hyperbolic space
+        self.mu = None  # Means of clusters
+        self.sigma = None  # Variances of clusters
+        self.weights = None  # Weights of each cluster
+
+    def _init_params(self, data):
+        n = data.shape[0]
+        self.mu = torch.randn(self.max_clusters, self.dim,
+                              device=data.device) * 0.01
+        self.sigma = torch.ones(self.max_clusters, device=data.device)
+        self.weights = Dirichlet(torch.ones(
+            self.max_clusters) * self.alpha).sample()
+
+    def _log_normal_pdf(self, x, mean, sigma):
+        """ Compute log probability of data under a normal distribution (adapt for hyperbolic space). """
+        return Normal(mean, sigma).log_prob(x).sum(-1)
+
+    def _e_step(self, data):
+        n = data.shape[0]
+        log_resps = torch.zeros(n, self.max_clusters, device=data.device)
+        for k in range(self.max_clusters):
+            log_resps[:, k] = self._log_normal_pdf(
+                data, self.mu[k], self.sigma[k]) + torch.log(self.weights[k])
+
+        log_resps = torch.log_softmax(log_resps, dim=-1)
+        resps = torch.exp(log_resps)
+        return resps
+
+    def _m_step(self, data, resps):
+        n = data.shape[0]
+        weighted_data_sum = torch.zeros(
+            self.max_clusters, self.dim, device=data.device)
+        weighted_sum = torch.zeros(self.max_clusters, device=data.device)
+        for k in range(self.max_clusters):
+            weighted_data_sum[k] = torch.sum(
+                resps[:, k].unsqueeze(-1) * data, dim=0)
+            weighted_sum[k] = torch.sum(resps[:, k])
+
+        self.mu = weighted_data_sum / weighted_sum.unsqueeze(-1)
+        self.weights = weighted_sum / n
+        # Update sigma using the responsibilities and data variance
+        for k in range(self.max_clusters):
+            variances = (data - self.mu[k]) ** 2
+            self.sigma[k] = torch.sqrt(
+                torch.sum(resps[:, k].unsqueeze(-1) * variances, dim=0) / weighted_sum[k])
+
+    def fit(self, data, tol=1e-4, max_iter=100):
+        self._init_params(data)
+        for _ in range(max_iter):
+            old_mu = self.mu.clone()
+            resps = self._e_step(data)
+            self._m_step(data, resps)
+            if torch.max(torch.abs(self.mu - old_mu)) < tol:
+                break
+
+    def predict(self, data):
+        resps = self._e_step(data)
+        return torch.argmax(resps, dim=1)
+
+
+# Sample usage
+data = torch.randn(100, 2)  # Example data in 2D
+model = InfiniteGMMHyperbolic(alpha=0.1, max_clusters=5, dim=2)
+model.fit(data)
+print("Cluster means:", model.mu)
+print("Predictions:", model.predict(data))
