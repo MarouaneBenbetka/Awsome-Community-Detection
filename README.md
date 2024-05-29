@@ -13,8 +13,8 @@ The Iterated Greedy algorithm employs a decompose-and-fix strategy, where parts 
 
 #### Source Code
 
--   **C++**: [code](./Iterative-Greedy/c++/)
--   **Python**: [code](./Iterative-Greedy/python/)
+-   **C++**: [code](./1-Iterative-Greedy/c++/)
+-   **Python**: [code](./1-Iterative-Greedy/python/)
 
 ### 2. Local Expansion and K-Means
 
@@ -25,8 +25,8 @@ This approach integrates local expansion techniques with K-means clustering to e
 
 #### Source Code
 
--   **C++**: [code](./local-expansion-kmeans/c++/)
--   **Python**: [code](./local-expansion-kmeans/python/)
+-   **C++**: [code](./2-local-expansion-kmeans/c++/)
+-   **Python**: [code](./2-local-expansion-kmeans/python/)
 
 ### 3. Hyperbolic Community Detection
 
@@ -34,4 +34,4 @@ A novel method that uses the properties of hyperbolic space to identify communit
 
 #### Source Code
 
--   **Python**: [code](./hyperbolic-community-detection/)
+-   **Python**: [code](./3-hyperbolic-community-detection/)
