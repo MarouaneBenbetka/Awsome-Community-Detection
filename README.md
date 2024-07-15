@@ -32,6 +32,8 @@ This approach integrates local expansion techniques with K-means clustering to e
 
 A novel method that uses the properties of hyperbolic space to identify communities. This approach leverages the natural clustering tendency of hyperbolic spaces to facilitate community detection.
 
+-   **Paper PDF**: [Download PDF](./3-hyperbolic-community-detection/paper/)
+
 #### Source Code
 
 -   **Python**: [code](./3-hyperbolic-community-detection/)
