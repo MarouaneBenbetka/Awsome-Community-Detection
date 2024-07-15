@@ -4,6 +4,10 @@ This repository contains implementations of three distinct community detection a
 
 ## Algorithms
 
+Machine learning offers a range of complex and diverse tools for community detection. These methods are classified into four main categories: traditional machine learning, deep learning, probabilistic graphical models, and hybrid learning systems. This is our own classification of the existing methods.
+
+![Classification Community Detection](./github/Community_Detection_Classification.png)
+
 ### 1. Iterated Greedy Algorithm
 
 The Iterated Greedy algorithm employs a decompose-and-fix strategy, where parts of the solution are iteratively modified to explore the solution space effectively.
